@@ -37,7 +37,8 @@
 
 ## 3. 예상 게임 실행 흐름
 
-![image](https://github.com/user-attachments/assets/e2864ecb-df87-41da-aa75-384f238e0bc0)
+![image](https://github.com/user-attachments/assets/185a3b19-3dc7-4770-8180-6a984374d97a)
+
 
 1.  **앱 실행:** 게임 타이틀과 "시작" 버튼이 있는 메인 화면 표시.
     * *(스케치: 타이틀 화면)*
