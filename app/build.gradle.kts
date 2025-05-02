@@ -3,7 +3,7 @@ plugins {
 }
 
 android {
-    namespace = "kr.ac.tukorea.ge.scgyong.dragonflight"
+    namespace = "kr.ac.tukorea.ge.rapagoo.neostrikers"
     compileSdk = 35
 
     buildFeatures {
@@ -11,7 +11,7 @@ android {
     }
     
     defaultConfig {
-        applicationId = "kr.ac.tukorea.ge.scgyong.dragonflight"
+        applicationId = "kr.ac.tukorea.ge.rapagoo.neostrikers"
         minSdk = 24
         targetSdk = 35
         versionCode = 1

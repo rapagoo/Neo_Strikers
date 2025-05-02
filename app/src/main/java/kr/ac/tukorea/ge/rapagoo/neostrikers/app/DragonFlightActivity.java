@@ -1,9 +1,9 @@
-package kr.ac.tukorea.ge.scgyong.dragonflight.app;
+package kr.ac.tukorea.ge.rapagoo.neostrikers.app;
 
 import android.os.Bundle;
 
-import kr.ac.tukorea.ge.scgyong.dragonflight.BuildConfig;
-import kr.ac.tukorea.ge.scgyong.dragonflight.game.MainScene;
+import kr.ac.tukorea.ge.rapagoo.neostrikers.BuildConfig;
+import kr.ac.tukorea.ge.rapagoo.neostrikers.game.MainScene;
 import kr.ac.tukorea.ge.spgp2025.a2dg.framework.activity.GameActivity;
 import kr.ac.tukorea.ge.spgp2025.a2dg.framework.view.GameView;
 

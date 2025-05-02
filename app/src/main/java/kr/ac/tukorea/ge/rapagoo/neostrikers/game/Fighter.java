@@ -1,4 +1,4 @@
-package kr.ac.tukorea.ge.scgyong.dragonflight.game;
+package kr.ac.tukorea.ge.rapagoo.neostrikers.game;
 
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
@@ -6,7 +6,7 @@ import android.graphics.Rect;
 import android.graphics.RectF;
 import android.view.MotionEvent;
 
-import kr.ac.tukorea.ge.scgyong.dragonflight.R;
+import kr.ac.tukorea.ge.rapagoo.neostrikers.R;
 import kr.ac.tukorea.ge.spgp2025.a2dg.framework.objects.Sprite;
 import kr.ac.tukorea.ge.spgp2025.a2dg.framework.res.BitmapPool;
 import kr.ac.tukorea.ge.spgp2025.a2dg.framework.scene.Scene;

@@ -1,4 +1,4 @@
-package kr.ac.tukorea.ge.scgyong.dragonflight.game;
+package kr.ac.tukorea.ge.rapagoo.neostrikers.game;
 
 import android.graphics.Canvas;
 

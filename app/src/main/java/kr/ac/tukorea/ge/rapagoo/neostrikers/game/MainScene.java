@@ -1,12 +1,11 @@
-package kr.ac.tukorea.ge.scgyong.dragonflight.game;
+package kr.ac.tukorea.ge.rapagoo.neostrikers.game;
 
 import android.view.MotionEvent;
 
-import kr.ac.tukorea.ge.scgyong.dragonflight.R;
+import kr.ac.tukorea.ge.rapagoo.neostrikers.R;
 import kr.ac.tukorea.ge.spgp2025.a2dg.framework.objects.Score;
 import kr.ac.tukorea.ge.spgp2025.a2dg.framework.objects.VertScrollBackground;
 import kr.ac.tukorea.ge.spgp2025.a2dg.framework.scene.Scene;
-import kr.ac.tukorea.ge.spgp2025.a2dg.framework.view.Metrics;
 
 public class MainScene extends Scene {
     private static final String TAG = MainScene.class.getSimpleName();

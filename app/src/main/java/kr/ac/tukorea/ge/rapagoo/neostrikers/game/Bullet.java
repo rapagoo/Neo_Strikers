@@ -1,8 +1,8 @@
-package kr.ac.tukorea.ge.scgyong.dragonflight.game;
+package kr.ac.tukorea.ge.rapagoo.neostrikers.game;
 
 import android.graphics.RectF;
 
-import kr.ac.tukorea.ge.scgyong.dragonflight.R;
+import kr.ac.tukorea.ge.rapagoo.neostrikers.R;
 import kr.ac.tukorea.ge.spgp2025.a2dg.framework.interfaces.IBoxCollidable;
 import kr.ac.tukorea.ge.spgp2025.a2dg.framework.interfaces.ILayerProvider;
 import kr.ac.tukorea.ge.spgp2025.a2dg.framework.interfaces.IRecyclable;

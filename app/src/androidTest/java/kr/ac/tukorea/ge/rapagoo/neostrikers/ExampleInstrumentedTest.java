@@ -1,4 +1,4 @@
-package kr.ac.tukorea.ge.scgyong.dragonflight;
+package kr.ac.tukorea.ge.rapagoo.neostrikers;
 
 import android.content.Context;
 

@@ -1,16 +1,12 @@
-package kr.ac.tukorea.ge.scgyong.dragonflight.app;
+package kr.ac.tukorea.ge.rapagoo.neostrikers.app;
 
 import android.content.Intent;
 import android.os.Bundle;
 import android.view.MotionEvent;
 
-import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.graphics.Insets;
-import androidx.core.view.ViewCompat;
-import androidx.core.view.WindowInsetsCompat;
 
-import kr.ac.tukorea.ge.scgyong.dragonflight.R;
+import kr.ac.tukorea.ge.rapagoo.neostrikers.R;
 
 public class MainActivity extends AppCompatActivity {
 
