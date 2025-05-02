@@ -3,11 +3,15 @@ plugins {
 }
 
 android {
-    namespace = "com.example.neo_strikers"
+    namespace = "kr.ac.tukorea.ge.scgyong.dragonflight"
     compileSdk = 35
 
+    buildFeatures {
+        buildConfig = true
+    }
+    
     defaultConfig {
-        applicationId = "com.example.neo_strikers"
+        applicationId = "kr.ac.tukorea.ge.scgyong.dragonflight"
         minSdk = 24
         targetSdk = 35
         versionCode = 1
@@ -33,6 +37,7 @@ android {
 
 dependencies {
 
+    implementation(project(":a2dg"))
     implementation(libs.appcompat)
     implementation(libs.material)
     implementation(libs.activity)

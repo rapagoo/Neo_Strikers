@@ -19,6 +19,6 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "Neo_Strikers"
+rootProject.name = "DragonFlight"
 include(":app")
- 
+include("a2dg")
