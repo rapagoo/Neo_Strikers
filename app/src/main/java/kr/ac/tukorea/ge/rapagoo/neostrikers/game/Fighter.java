@@ -39,8 +39,8 @@ public class Fighter extends Sprite implements IBoxCollidable {
     private static final float SPARK_DURATION = 0.1f;
     private static final float SPARK_WIDTH = 80f; // 비행기 크기에 맞춰 조정
     private static final float SPARK_HEIGHT = SPARK_WIDTH * 3 / 5;
-    private RectF sparkRect = new RectF();
-    private Bitmap sparkBitmap;
+    private final RectF sparkRect = new RectF();
+    private final Bitmap sparkBitmap;
 
     // 좌우 기울기(Roll) 애니메이션 관련 변수
     private static final float MAX_ROLL_TIME = 0.4f;
@@ -48,7 +48,7 @@ public class Fighter extends Sprite implements IBoxCollidable {
     private float prevX; // 이전 프레임의 x 좌표 저장용
 
     // 충돌 영역
-    private RectF collisionRect = new RectF();
+    private final RectF collisionRect = new RectF();
 
     public Fighter() {
         super(R.mipmap.fighters); // 비행기 스프라이트 시트 로드
