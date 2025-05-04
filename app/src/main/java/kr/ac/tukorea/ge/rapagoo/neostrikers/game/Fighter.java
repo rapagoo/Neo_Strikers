@@ -34,6 +34,10 @@ public class Fighter extends Sprite implements IBoxCollidable {
     private float fireCoolTime = FIRE_INTERVAL;
     private static final float BULLET_OFFSET = 60f; // 비행기 크기에 맞춰 조정
 
+    // 파워업 관련 변수
+    private int powerLevel = 1; // 파워 레벨 변수 (초기값 1)
+    private static final int MAX_POWER_LEVEL = 3; // 최대 파워 레벨 상수
+
     // 발사 섬광 효과 관련 변수
     private static final float SPARK_OFFSET = 50f; // 비행기 크기에 맞춰 조정
     private static final float SPARK_DURATION = 0.1f;
@@ -197,5 +201,16 @@ public class Fighter extends Sprite implements IBoxCollidable {
     @Override
     public RectF getCollisionRect() {
         return collisionRect; // 계산된 충돌 영역 반환
+    }
+
+    public void increasePowerLevel() {
+        if (powerLevel < MAX_POWER_LEVEL) {
+            powerLevel++;
+        }
+        // 파워업 시 효과음 재생 추가 예정
+    }
+
+    public int getPowerLevel() {
+        return powerLevel;
     }
 }

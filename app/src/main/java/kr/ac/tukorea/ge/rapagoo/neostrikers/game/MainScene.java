@@ -13,7 +13,7 @@ public class MainScene extends Scene {
     private final Score score;
 
     public enum Layer {
-        bg1, enemy, bullet, fighter, bg2, ui, controller;
+        bg1, enemy, bullet, fighter, bg2, ui, controller, item;
         public static final int COUNT = values().length;
     }
     public MainScene() {
