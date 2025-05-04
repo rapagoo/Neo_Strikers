@@ -16,7 +16,7 @@ import kr.ac.tukorea.ge.spgp2025.a2dg.framework.view.Metrics;
 
 public class Fighter extends Sprite {
     private static final String TAG = Fighter.class.getSimpleName();
-    private static final float PLANE_WIDTH = 175f;
+    private static final float PLANE_WIDTH = 100f;
     private static final int PLANE_SRC_WIDTH = 80;
     private static final float SPEED = 300f;
     private float targetX;
