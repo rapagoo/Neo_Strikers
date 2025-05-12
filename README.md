@@ -42,8 +42,7 @@
 
 ## 3. Git Commit 현황
 
-* **Commit 빈도:** (본인의 GitHub Repository Insights > Commits 그래프 스크린샷을 여기에 첨부하세요)
-    * *예시: \[GitHub Commit 그래프 이미지]*
+* **Commit 빈도:** ![Image](https://github.com/user-attachments/assets/0acc8d00-81f0-4b2e-91d6-6f5a075d3eeb)
     * *설명: 초기 4주간은 수업에서 제공된 프레임워크를 학습하고 게임에 필요한 에셋을 준비하는 기간이었습니다. 5주차부터 교수님의 프로젝트 코드를 기반으로 본격적인 개발을 시작하며 주요 기능 구현 단계별로 커밋을 진행하고 있습니다.*
 * **주차별 Commit 수:**
 
