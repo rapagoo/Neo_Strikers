@@ -34,7 +34,7 @@ public class Fighter extends Sprite implements IBoxCollidable {
     private static final float BULLET_OFFSET = 60f;
 
     // 파워업 관련 변수
-    private int powerLevel = 1;
+    private int powerLevel = 1; // private으로 유지
     private static final int MAX_POWER_LEVEL = 3;
 
     // 총알 발사 관련 상수
@@ -71,6 +71,7 @@ public class Fighter extends Sprite implements IBoxCollidable {
         targetY = y;
         prevX = x;
         health = INITIAL_HEALTH; // 체력 초기화
+        powerLevel = 1; // 생성자에서 파워 레벨 초기화
 
         sparkBitmap = BitmapPool.get(R.mipmap.laser_spark);
         srcRect = new Rect();
@@ -232,7 +233,7 @@ public class Fighter extends Sprite implements IBoxCollidable {
     }
 
     public void decreaseHealth(int amount) {
-        if (isInvincible()) { // 접근자 메소드 사용
+        if (isInvincible()) {
             return;
         }
         if (health <= 0) return;
@@ -257,7 +258,6 @@ public class Fighter extends Sprite implements IBoxCollidable {
         return health;
     }
 
-    // public 접근자로 isInvincible 상태를 반환하는 메소드
     public boolean isInvincible() {
         return isInvincible;
     }
@@ -266,5 +266,11 @@ public class Fighter extends Sprite implements IBoxCollidable {
         health = INITIAL_HEALTH;
         isInvincible = false;
         invincibleTime = 0f;
+    }
+
+    // 파워 레벨을 초기화하는 public 메소드 추가
+    public void resetPowerLevel() {
+        this.powerLevel = 1;
+        Log.d(TAG, "Power level has been reset to: " + this.powerLevel);
     }
 }
