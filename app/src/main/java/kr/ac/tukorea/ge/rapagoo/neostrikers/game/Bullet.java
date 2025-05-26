@@ -2,7 +2,7 @@ package kr.ac.tukorea.ge.rapagoo.neostrikers.game;
 
 import android.graphics.RectF;
 
-import kr.ac.tukorea.ge.rapagoo.neostrikers.R; // R 파일 임포트 확인
+import kr.ac.tukorea.ge.rapagoo.neostrikers.R;
 import kr.ac.tukorea.ge.spgp2025.a2dg.framework.interfaces.IBoxCollidable;
 import kr.ac.tukorea.ge.spgp2025.a2dg.framework.interfaces.ILayerProvider;
 import kr.ac.tukorea.ge.spgp2025.a2dg.framework.interfaces.IRecyclable;
