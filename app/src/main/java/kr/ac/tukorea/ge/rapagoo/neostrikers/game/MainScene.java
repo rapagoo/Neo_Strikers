@@ -25,7 +25,7 @@ public class MainScene extends Scene {
 
     // 게임 레이어 정의
     public enum Layer {
-        bg1, enemy, bullet, fighter, item, bg2, ui, controller, effect; // effect 레이어 추가 (폭발 등)
+        bg1, enemy, enemy_bullet, bullet, fighter, item, bg2, ui, controller, effect; // effect 레이어 추가 (폭발 등)
         public static final int COUNT = values().length;
     }
 
