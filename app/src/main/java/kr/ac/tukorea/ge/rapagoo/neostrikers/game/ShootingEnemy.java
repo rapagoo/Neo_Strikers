@@ -13,6 +13,7 @@ import kr.ac.tukorea.ge.spgp2025.a2dg.framework.res.BitmapPool;
 import kr.ac.tukorea.ge.spgp2025.a2dg.framework.scene.Scene;
 import kr.ac.tukorea.ge.spgp2025.a2dg.framework.util.RectUtil;
 import kr.ac.tukorea.ge.spgp2025.a2dg.framework.view.GameView;
+import kr.ac.tukorea.ge.spgp2025.a2dg.framework.view.Metrics;
 
 public class ShootingEnemy extends Enemy {
     private static final String TAG = ShootingEnemy.class.getSimpleName();
@@ -21,8 +22,35 @@ public class ShootingEnemy extends Enemy {
     private AnimSprite engineSprite;
 
     private float fireCoolTime;
-    private static final float FIRE_INTERVAL = 2.0f;
+    private static final float FIRE_INTERVAL_BASE = 1.5f; // 기본 발사 간격 (더 빠르게)
     private static final float BULLET_SPEED_Y = 600f;
+
+    // 이동 패턴 관련 변수
+    private enum MovementPattern {
+        STRAIGHT_DOWN,      // 직진
+        ZIGZAG,            // 지그재그
+        SINE_WAVE,         // 사인파
+        SPIRAL,            // 나선형
+        RANDOM_DRIFT       // 랜덤 표류
+    }
+    
+    private MovementPattern movementPattern;
+    private float moveTime = 0f;           // 이동 패턴용 시간
+    private float initialX;                // 초기 X 위치
+    private float horizontalSpeed = 150f;  // 좌우 이동 속도
+    private float patternAmplitude = 80f;  // 패턴 진폭
+
+    // 총알 패턴 관련 변수
+    private enum BulletPattern {
+        SINGLE,      // 단발
+        TRIPLE,      // 3발
+        SPREAD,      // 부채꼴
+        PLAYER_AIM   // 플레이어 추적
+    }
+    
+    private BulletPattern bulletPattern;
+    private int shotsRemaining = 0;        // 연속 사격 시 남은 총알 수
+    private float burstInterval = 0.1f;    // 연속 사격 간격
 
     // 이미지 리소스 ID - 실제 파일과 일치하는지 반드시 확인하세요!
     private static final int BODY_SPRITE_ID = R.mipmap.enemy_fighter_body;
@@ -37,9 +65,6 @@ public class ShootingEnemy extends Enemy {
 
     private static final float ENGINE_WIDTH_RATIO_OF_BODY = 0.6f;
     private static final float ENGINE_HEIGHT_ADJUST = 1.0f;
-
-    private static final float COLLISION_BOX_WIDTH_RATIO = 0.7f;
-    private static final float COLLISION_BOX_HEIGHT_RATIO = 0.6f;
 
     // 멤버 변수로 본체 및 엔진의 실제 계산된 크기를 저장 (update에서 사용하기 위함)
     private float calculatedBodyActualWidth;
@@ -63,6 +88,22 @@ public class ShootingEnemy extends Enemy {
 
     private void initShootingEnemy(int level, int index) {
         super.init(level, index); // 부모 init에서 x, y 등 기본 위치 설정
+        
+        // 체력을 레벨에 따라 증가 (3~8배)
+        this.life = this.maxLife = (level + 1) * 30; // 기존 10에서 30으로 증가
+        
+        // 초기 위치 저장
+        this.initialX = this.x;
+        
+        // 랜덤하게 이동 패턴 선택
+        MovementPattern[] patterns = MovementPattern.values();
+        this.movementPattern = patterns[(int)(Math.random() * patterns.length)];
+        
+        // 랜덤하게 총알 패턴 선택
+        BulletPattern[] bulletPatterns = BulletPattern.values();
+        this.bulletPattern = bulletPatterns[(int)(Math.random() * bulletPatterns.length)];
+        
+        Log.d(TAG, "ShootingEnemy initialized with pattern: " + movementPattern + ", bullet: " + bulletPattern);
 
         // 1. 본체 스프라이트 로드 및 원본 비율에 따른 크기 계산
         Bitmap bodyBitmap = BitmapPool.get(BODY_SPRITE_ID);
@@ -126,11 +167,14 @@ public class ShootingEnemy extends Enemy {
 
 
         this.bitmap = null; // 부모의 비트맵은 사용 안 함
-        fireCoolTime = FIRE_INTERVAL + (float) Math.random();
+        fireCoolTime = FIRE_INTERVAL_BASE + (float) Math.random();
     }
 
     @Override
     public void update() {
+        // 이동 패턴 업데이트
+        updateMovementPattern();
+        
         super.update(); // this.x, this.y 위치 변경
 
         // init에서 계산된 크기를 사용하여 위치 업데이트
@@ -147,10 +191,71 @@ public class ShootingEnemy extends Enemy {
         }
 
 
+        // 총알 발사 처리 (연속 사격 고려)
         fireCoolTime -= GameView.frameTime;
         if (fireCoolTime <= 0) {
-            fireBullet();
-            fireCoolTime = FIRE_INTERVAL;
+            if (shotsRemaining > 0) {
+                fireBullet();
+                shotsRemaining--;
+                fireCoolTime = burstInterval; // 연속 사격 간격
+            } else {
+                startBurstFire();
+                fireCoolTime = FIRE_INTERVAL_BASE + (float)(Math.random() * 1.0f); // 랜덤 발사 간격
+            }
+        }
+    }
+    
+    private void updateMovementPattern() {
+        moveTime += GameView.frameTime;
+        
+        float newX = this.x;
+        
+        switch (movementPattern) {
+            case STRAIGHT_DOWN:
+                // 기본 직진 (변화 없음)
+                break;
+                
+            case ZIGZAG:
+                newX = initialX + (float)Math.sin(moveTime * 3.0) * patternAmplitude;
+                break;
+                
+            case SINE_WAVE:
+                newX = initialX + (float)Math.sin(moveTime * 2.0) * patternAmplitude * 1.5f;
+                break;
+                
+            case SPIRAL:
+                float spiralRadius = patternAmplitude * (0.5f + moveTime * 0.1f);
+                newX = initialX + (float)Math.cos(moveTime * 4.0) * spiralRadius;
+                break;
+                
+            case RANDOM_DRIFT:
+                if ((int)(moveTime * 2) % 2 == 0) { // 0.5초마다 방향 변경
+                    newX += horizontalSpeed * GameView.frameTime * (Math.random() > 0.5 ? 1 : -1);
+                }
+                break;
+        }
+        
+        // 화면 경계 체크
+        float halfWidth = calculatedBodyActualWidth / 2;
+        newX = Math.max(halfWidth, Math.min(newX, Metrics.width - halfWidth));
+        this.x = newX;
+    }
+    
+    private void startBurstFire() {
+        switch (bulletPattern) {
+            case SINGLE:
+                shotsRemaining = 1;
+                break;
+            case TRIPLE:
+                shotsRemaining = 3;
+                burstInterval = 0.15f;
+                break;
+            case SPREAD:
+                shotsRemaining = 1; // 한 번에 여러 발 발사
+                break;
+            case PLAYER_AIM:
+                shotsRemaining = 1;
+                break;
         }
     }
 
@@ -170,16 +275,60 @@ public class ShootingEnemy extends Enemy {
             Log.e(TAG, "fireBullet called but bodySprite is null!");
             return;
         }
-        int bulletPower = 5;
+        
+        int bulletPower = 8; // 총알 위력 증가
         float firePosX = bodySprite.getX();
         float firePosY = bodySprite.getY() + bodySprite.getHeight() / 2;
 
-        EnemyBullet bullet = EnemyBullet.get(firePosX, firePosY, 0, BULLET_SPEED_Y, bulletPower);
-
         Scene currentScene = Scene.top();
-        if (currentScene instanceof MainScene) {
-            ((MainScene)currentScene).add(MainScene.Layer.enemy_bullet, bullet);
+        if (!(currentScene instanceof MainScene)) return;
+        MainScene mainScene = (MainScene) currentScene;
+        
+        switch (bulletPattern) {
+            case SINGLE:
+                EnemyBullet bullet = EnemyBullet.get(firePosX, firePosY, 0, BULLET_SPEED_Y, bulletPower);
+                mainScene.add(MainScene.Layer.enemy_bullet, bullet);
+                break;
+                
+            case TRIPLE:
+                // 3발 직진
+                EnemyBullet bullet1 = EnemyBullet.get(firePosX, firePosY, 0, BULLET_SPEED_Y, bulletPower);
+                mainScene.add(MainScene.Layer.enemy_bullet, bullet1);
+                break;
+                
+            case SPREAD:
+                // 부채꼴 5발
+                for (int i = -2; i <= 2; i++) {
+                    float spreadAngle = i * 0.3f; // 각도 (라디안)
+                    float speedX = BULLET_SPEED_Y * (float)Math.sin(spreadAngle) * 0.5f;
+                    float speedY = BULLET_SPEED_Y * (float)Math.cos(spreadAngle);
+                    EnemyBullet spreadBullet = EnemyBullet.get(firePosX, firePosY, speedX, speedY, bulletPower);
+                    mainScene.add(MainScene.Layer.enemy_bullet, spreadBullet);
+                }
+                break;
+                
+            case PLAYER_AIM:
+                // 플레이어 방향으로 발사
+                Fighter player = findPlayer(mainScene);
+                if (player != null) {
+                    float dx = player.getX() - firePosX;
+                    float dy = player.getY() - firePosY;
+                    float distance = (float)Math.sqrt(dx * dx + dy * dy);
+                    if (distance > 0) {
+                        float aimSpeedX = (dx / distance) * BULLET_SPEED_Y * 0.8f;
+                        float aimSpeedY = (dy / distance) * BULLET_SPEED_Y * 0.8f;
+                        EnemyBullet aimBullet = EnemyBullet.get(firePosX, firePosY, aimSpeedX, aimSpeedY, bulletPower);
+                        mainScene.add(MainScene.Layer.enemy_bullet, aimBullet);
+                    }
+                }
+                break;
         }
+    }
+    
+    private Fighter findPlayer(MainScene scene) {
+        // 간단한 플레이어 찾기 - 실제 구현은 MainScene에서 플레이어 참조를 제공하는 것이 좋음
+        // 여기서는 임시로 null 반환 (플레이어 추적 기능은 나중에 완성)
+        return null; // TODO: MainScene에서 플레이어 참조 제공 필요
     }
 
     @Override
@@ -188,11 +337,11 @@ public class ShootingEnemy extends Enemy {
             RectF rect = new RectF();
             float bodyX = bodySprite.getX();
             float bodyY = bodySprite.getY();
-            // init에서 계산된 본체 크기를 사용
-            float collisionWidth = calculatedBodyActualWidth * COLLISION_BOX_WIDTH_RATIO;
-            float collisionHeight = calculatedBodyActualHeight * COLLISION_BOX_HEIGHT_RATIO;
-
-            RectUtil.setRect(rect, bodyX, bodyY, collisionWidth, collisionHeight);
+            
+            // 플레이어와 동일한 방식: 전체 크기에서 inset 적용
+            RectUtil.setRect(rect, bodyX, bodyY, calculatedBodyActualWidth, calculatedBodyActualHeight);
+            rect.inset(calculatedBodyActualWidth * 0.3f, calculatedBodyActualHeight * 0.3f);
+            
             return rect;
         }
         Log.w(TAG, "bodySprite is null in getCollisionRect, returning overall dstRect.");

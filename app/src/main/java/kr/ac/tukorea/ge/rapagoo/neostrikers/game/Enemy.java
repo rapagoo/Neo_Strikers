@@ -23,7 +23,8 @@ public class Enemy extends AnimSprite implements IRecyclable, IBoxCollidable, IL
     };
     public static final int MAX_LEVEL = resIds.length - 1;
     private int level;
-    private int life, maxLife;
+    int life;
+    int maxLife;
     protected RectF collisionRect = new RectF();
     protected static Gauge gauge = new Gauge(0.1f, R.color.enemy_gauge_fg, R.color.enemy_gauge_bg);
     public static Enemy get(int level, int index) {

@@ -15,8 +15,8 @@ public class EnemyBullet extends AnimSprite implements IRecyclable, IBoxCollidab
     private static final String TAG = EnemyBullet.class.getSimpleName();
 
     // 총알 크기 (애니메이션 프레임 하나의 크기에 맞춰야 함)
-    private static final float BULLET_WIDTH = 50f; // 예시 크기, 실제 프레임 너비에 맞게 조절
-    private static final float BULLET_HEIGHT = 50f; // 예시 크기, 실제 프레임 높이에 맞게 조절
+    private static final float BULLET_WIDTH = 32f; // 예시 크기, 실제 프레임 너비에 맞게 조절
+    private static final float BULLET_HEIGHT = 32f; // 예시 크기, 실제 프레임 높이에 맞게 조절
 
     private int power; // 총알 공격력
     // private int imageResId; // AnimSprite는 생성자에서 이미지 ID를 받으므로 별도 저장 불필요
@@ -30,7 +30,7 @@ public class EnemyBullet extends AnimSprite implements IRecyclable, IBoxCollidab
         // mipmapId: 애니메이션 스프라이트 시트의 리소스 ID
         // fps: 초당 프레임 수 (애니메이션 속도)
         // frameCount: 스프라이트 시트 내의 총 프레임 수 (0이면 이미지 높이를 기준으로 자동 계산)
-        super(R.mipmap.enemybullet_1, 8.0f, 8); // 예시: enemy_bullet_anim 이미지, 10fps, 4프레임
+        super(R.mipmap.enemybullet_1, 4.0f, 4); // 예시: enemy_bullet_anim 이미지, 10fps, 4프레임
         // Log.d(TAG, "EnemyBullet constructor called");
     }
 

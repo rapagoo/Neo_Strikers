@@ -17,7 +17,9 @@ public class Sprite implements IGameObject {
     protected Rect srcRect = null;
     protected final RectF dstRect = new RectF();
     protected float x, y, dx, dy;
-    protected float width, height, radius;
+    public float width;
+    public float height;
+    protected float radius;
 
     public Sprite(int mipmapId) {
         if (mipmapId != 0) {
