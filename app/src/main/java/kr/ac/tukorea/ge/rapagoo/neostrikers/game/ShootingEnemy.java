@@ -52,7 +52,7 @@ public class ShootingEnemy extends Enemy {
     private int shotsRemaining = 0;        // 연속 사격 시 남은 총알 수
     private float burstInterval = 0.1f;    // 연속 사격 간격
 
-    // 이미지 리소스 ID
+    // 이미지 리소스 ID - 실제 파일과 일치하는지 반드시 확인하세요!
     private static final int BODY_SPRITE_ID = R.mipmap.enemy_fighter_body;
     private static final int ENGINE_SPRITE_ID = R.mipmap.enemy_fighter_engine;
 
