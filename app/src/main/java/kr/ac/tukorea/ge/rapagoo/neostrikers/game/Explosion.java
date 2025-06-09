@@ -17,17 +17,19 @@ public class Explosion implements IGameObject, IRecyclable, ILayerProvider<MainS
     public static final int STATE_ALIVE = 0;
     public static final int STATE_DEAD = 1;
     
-    private static final int DEFAULT_PARTICLE_COUNT = 50; // 더 많은 파티클
-    private static final int SPARK_COUNT = 20; // 스파크 파티클
-    private static final float DEFAULT_LIFETIME = 1.5f; // 더 긴 지속시간
-    private static final float MAX_SPEED = 500f; // 더 빠른 속도
-    private static final float MIN_SPEED = 50f;
-    private static final int MAX_PARTICLE_SIZE = 12; // 더 큰 파티클
-    private static final int MIN_PARTICLE_SIZE = 1;
+    private static final int DEFAULT_PARTICLE_COUNT = 80; // 훨씬 더 많은 파티클
+    private static final int SPARK_COUNT = 40; // 더 많은 스파크
+    private static final float DEFAULT_LIFETIME = 2.0f; // 더 긴 지속시간
+    private static final float MAX_SPEED = 700f; // 훨씬 빠른 속도
+    private static final float MIN_SPEED = 100f;
+    private static final int MAX_PARTICLE_SIZE = 20; // 훨씬 큰 파티클
+    private static final int MIN_PARTICLE_SIZE = 3;
     
     private Particle[] particles;
     private Particle[] sparks; // 스파크 파티클 배열
     private ShockWave shockWave; // 충격파 효과
+    private ExplosionCore core; // 폭발 중심 코어
+    private ScreenFlash flash; // 화면 플래시 효과
     private int state;
     private float x, y;
     private Random random;
@@ -64,6 +66,12 @@ public class Explosion implements IGameObject, IRecyclable, ILayerProvider<MainS
         
         // 충격파 효과
         shockWave = new ShockWave(x, y);
+        
+        // 폭발 중심 코어
+        core = new ExplosionCore(x, y);
+        
+        // 화면 플래시 효과
+        flash = new ScreenFlash();
     }
     
     @Override
@@ -94,6 +102,18 @@ public class Explosion implements IGameObject, IRecyclable, ILayerProvider<MainS
             anyAlive = true;
         }
         
+        // 폭발 코어 업데이트
+        if (core.isAlive()) {
+            core.update();
+            anyAlive = true;
+        }
+        
+        // 화면 플래시 업데이트
+        if (flash.isAlive()) {
+            flash.update();
+            anyAlive = true;
+        }
+        
         if (!anyAlive) {
             state = STATE_DEAD;
             Scene.top().remove(this);
@@ -104,9 +124,19 @@ public class Explosion implements IGameObject, IRecyclable, ILayerProvider<MainS
     public void draw(Canvas canvas) {
         if (state == STATE_DEAD) return;
         
-        // 충격파를 먼저 그리기 (배경)
+        // 화면 플래시를 가장 먼저 그리기 (전체 화면)
+        if (flash.isAlive()) {
+            flash.draw(canvas);
+        }
+        
+        // 충격파를 그리기 (배경)
         if (shockWave.isAlive()) {
             shockWave.draw(canvas);
+        }
+        
+        // 폭발 코어를 그리기 (중심)
+        if (core.isAlive()) {
+            core.draw(canvas);
         }
         
         // 메인 파티클 그리기
@@ -186,6 +216,103 @@ public class Explosion implements IGameObject, IRecyclable, ILayerProvider<MainS
         }
     }
     
+    // 폭발 중심 코어 클래스 - 매우 밝은 중심점
+    private class ExplosionCore {
+        private float x, y;
+        private float size;
+        private float maxSize;
+        private float life;
+        private float maxLife;
+        private Paint corePaint;
+        private Paint glowPaint;
+        
+        public ExplosionCore(float x, float y) {
+            this.x = x;
+            this.y = y;
+            this.size = 0f;
+            this.maxSize = 50f;
+            this.maxLife = this.life = 0.4f; // 짧지만 강렬한 지속시간
+            
+            this.corePaint = new Paint();
+            this.corePaint.setAntiAlias(true);
+            
+            this.glowPaint = new Paint();
+            this.glowPaint.setAntiAlias(true);
+        }
+        
+        public void update() {
+            if (life <= 0) return;
+            
+            life -= GameView.frameTime;
+            
+            // 크기는 빠르게 커졌다가 서서히 작아짐
+            float lifeRatio = life / maxLife;
+            if (lifeRatio > 0.7f) {
+                size = maxSize * (1.0f - lifeRatio) * 3.33f; // 빠른 확장
+            } else {
+                size = maxSize * lifeRatio * 1.43f; // 서서히 축소
+            }
+            
+            // 매우 밝은 흰색 코어
+            int alpha = (int) (255 * lifeRatio);
+            corePaint.setColor(Color.argb(alpha, 255, 255, 255));
+            
+            // 글로우 효과 (더 큰 범위, 반투명)
+            int glowAlpha = (int) (alpha * 0.3f);
+            glowPaint.setColor(Color.argb(glowAlpha, 255, 200, 0)); // 금색 글로우
+        }
+        
+        public void draw(Canvas canvas) {
+            if (life <= 0) return;
+            
+            // 글로우 효과를 먼저 그리기 (더 큰 원)
+            canvas.drawCircle(x, y, size * 2.5f, glowPaint);
+            
+            // 밝은 코어를 위에 그리기
+            canvas.drawCircle(x, y, size, corePaint);
+        }
+        
+        public boolean isAlive() {
+            return life > 0;
+        }
+    }
+    
+    // 화면 플래시 효과 클래스
+    private class ScreenFlash {
+        private float intensity;
+        private float life;
+        private float maxLife;
+        private Paint flashPaint;
+        
+        public ScreenFlash() {
+            this.intensity = 0.4f; // 플래시 강도
+            this.maxLife = this.life = 0.15f; // 매우 짧은 플래시
+            this.flashPaint = new Paint();
+        }
+        
+        public void update() {
+            if (life <= 0) return;
+            
+            life -= GameView.frameTime;
+            
+            // 빠르게 페이드 아웃
+            float alpha = (life / maxLife) * intensity;
+            int alphaInt = (int) (255 * alpha);
+            flashPaint.setColor(Color.argb(alphaInt, 255, 255, 255)); // 흰색 플래시
+        }
+        
+        public void draw(Canvas canvas) {
+            if (life <= 0) return;
+            
+            // 전체 화면을 덮는 플래시
+            canvas.drawRect(0, 0, canvas.getWidth(), canvas.getHeight(), flashPaint);
+        }
+        
+        public boolean isAlive() {
+            return life > 0;
+        }
+    }
+    
     // 파티클 내부 클래스
     private class Particle {
         private float x, y;
@@ -233,16 +360,18 @@ public class Explosion implements IGameObject, IRecyclable, ILayerProvider<MainS
             this.initialSize = this.size = MIN_PARTICLE_SIZE + random.nextFloat() * (MAX_PARTICLE_SIZE - MIN_PARTICLE_SIZE);
             this.maxLife = this.life = DEFAULT_LIFETIME * (0.8f + random.nextFloat() * 0.4f); // 수명 변화
             
-            // 폭발 색상 (더 다양한 색상)
+            // 강렬하고 선명한 폭발 색상
             int[] colors = {
-                Color.rgb(255, 165, 0),  // 주황색
-                Color.rgb(255, 69, 0),   // 빨간 주황색
-                Color.rgb(255, 255, 0),  // 노란색
-                Color.rgb(255, 0, 0),    // 빨간색
-                Color.rgb(255, 215, 0),  // 금색
-                Color.rgb(255, 140, 0),  // 진한 주황색
-                Color.rgb(255, 20, 147), // 분홍색
-                Color.rgb(255, 105, 180) // 핫 핑크
+                Color.rgb(255, 255, 0),   // 밝은 노란색
+                Color.rgb(255, 140, 0),   // 강렬한 주황색
+                Color.rgb(255, 69, 0),    // 진한 주황색
+                Color.rgb(255, 20, 20),   // 밝은 빨간색
+                Color.rgb(255, 215, 0),   // 금색
+                Color.rgb(255, 255, 100), // 연한 노란색
+                Color.rgb(255, 100, 0),   // 불꽃색
+                Color.rgb(255, 255, 255), // 흰색 (매우 뜨거운 느낌)
+                Color.rgb(255, 200, 0),   // 황금색
+                Color.rgb(255, 50, 50)    // 밝은 적색
             };
             this.baseColor = colors[random.nextInt(colors.length)];
         }
@@ -258,13 +387,15 @@ public class Explosion implements IGameObject, IRecyclable, ILayerProvider<MainS
             this.initialSize = this.size = 1f + random.nextFloat() * 3f;
             this.maxLife = this.life = DEFAULT_LIFETIME * 0.5f;
             
-            // 밝은 색상
+            // 매우 밝고 강렬한 스파크 색상
             int[] sparkColors = {
-                Color.rgb(255, 255, 255), // 흰색
-                Color.rgb(255, 255, 0),   // 노란색
-                Color.rgb(255, 215, 0),   // 금색
-                Color.rgb(255, 255, 224), // 연한 노란색
-                Color.rgb(255, 250, 205)  // 레몬색
+                Color.rgb(255, 255, 255), // 순백색
+                Color.rgb(255, 255, 200), // 밝은 크림색
+                Color.rgb(255, 255, 100), // 밝은 노란색
+                Color.rgb(255, 255, 0),   // 순 노란색
+                Color.rgb(255, 235, 59),  // 형광 노란색
+                Color.rgb(255, 193, 7),   // 앰버색
+                Color.rgb(255, 255, 150)  // 연한 크림색
             };
             this.baseColor = sparkColors[random.nextInt(sparkColors.length)];
         }
@@ -338,43 +469,81 @@ public class Explosion implements IGameObject, IRecyclable, ILayerProvider<MainS
             canvas.save();
             
             if (type == ParticleType.EXPLOSION) {
-                // 궤적 효과 (일부 파티클만)
-                if (trail && life < maxLife * 0.8f) {
-                    Paint trailPaint = new Paint(paint);
-                    int trailAlpha = (int) (paint.getAlpha() * 0.3f);
-                    trailPaint.setAlpha(trailAlpha);
-                    
-                    // 이전 위치들을 그려서 궤적 효과
-                    float prevX = x - vx * GameView.frameTime * 2;
-                    float prevY = y - vy * GameView.frameTime * 2;
-                    canvas.drawLine(x, y, prevX, prevY, trailPaint);
-                }
+                // 글로우 효과를 먼저 그리기 (더 큰 크기, 반투명)
+                Paint glowPaint = new Paint(paint);
+                int glowAlpha = (int) (paint.getAlpha() * 0.4f);
+                glowPaint.setAlpha(glowAlpha);
+                glowPaint.setColor(Color.argb(glowAlpha, 255, 200, 0)); // 금색 글로우
                 
-                // 회전된 사각형으로 그리기 (다양한 모양)
                 canvas.translate(x, y);
                 canvas.rotate(rotation);
                 
-                if (size > 6f) {
-                    // 큰 파티클은 사각형
+                // 글로우 효과 (원형, 더 큰 크기)
+                canvas.drawCircle(0, 0, size * 1.8f, glowPaint);
+                
+                // 궤적 효과 (일부 파티클만)
+                if (trail && life < maxLife * 0.8f) {
+                    Paint trailPaint = new Paint(paint);
+                    int trailAlpha = (int) (paint.getAlpha() * 0.5f);
+                    trailPaint.setAlpha(trailAlpha);
+                    
+                    // 이전 위치들을 그려서 궤적 효과
+                    float prevX = -vx * GameView.frameTime * 3;
+                    float prevY = -vy * GameView.frameTime * 3;
+                    canvas.drawLine(0, 0, prevX, prevY, trailPaint);
+                }
+                
+                // 메인 파티클 (더 강렬하게)
+                if (size > 8f) {
+                    // 큰 파티클은 사각형 + 내부 밝은 점
                     canvas.drawRect(-size/2, -size/2, size/2, size/2, paint);
+                    
+                    // 중심에 밝은 점 추가
+                    Paint centerPaint = new Paint();
+                    centerPaint.setColor(Color.WHITE);
+                    centerPaint.setAlpha((int) (paint.getAlpha() * 0.8f));
+                    canvas.drawCircle(0, 0, size * 0.3f, centerPaint);
                 } else {
-                    // 작은 파티클은 원형
+                    // 작은 파티클은 원형 + 테두리
                     canvas.drawCircle(0, 0, size, paint);
+                    
+                    // 밝은 테두리 추가
+                    Paint rimPaint = new Paint();
+                    rimPaint.setStyle(Paint.Style.STROKE);
+                    rimPaint.setStrokeWidth(2f);
+                    rimPaint.setColor(Color.WHITE);
+                    rimPaint.setAlpha((int) (paint.getAlpha() * 0.6f));
+                    canvas.drawCircle(0, 0, size * 1.1f, rimPaint);
                 }
             } else {
-                // 스파크는 선으로 그리기
+                // 스파크는 더 밝고 강렬하게
                 Paint sparkPaint = new Paint(paint);
-                sparkPaint.setStrokeWidth(Math.max(1f, size / 2f));
+                sparkPaint.setStrokeWidth(Math.max(2f, size));
                 sparkPaint.setStrokeCap(Paint.Cap.ROUND);
                 
-                float lineLength = Math.max(size * 2f, 8f);
-                float endX = x + (vx / Math.abs(vx + vy)) * lineLength;
-                float endY = y + (vy / Math.abs(vx + vy)) * lineLength;
+                // 글로우 효과 먼저
+                Paint sparkGlow = new Paint(sparkPaint);
+                sparkGlow.setAlpha((int) (sparkPaint.getAlpha() * 0.3f));
+                sparkGlow.setColor(Color.argb(sparkGlow.getAlpha(), 255, 255, 0));
+                sparkGlow.setStrokeWidth(sparkPaint.getStrokeWidth() * 2f);
                 
-                canvas.drawLine(x, y, endX, endY, sparkPaint);
+                float lineLength = Math.max(size * 3f, 12f);
+                float speedMagnitude = (float) Math.sqrt(vx * vx + vy * vy);
+                if (speedMagnitude > 0) {
+                    float endX = x + (vx / speedMagnitude) * lineLength;
+                    float endY = y + (vy / speedMagnitude) * lineLength;
+                    
+                    // 글로우 선
+                    canvas.drawLine(x, y, endX, endY, sparkGlow);
+                    // 메인 선
+                    canvas.drawLine(x, y, endX, endY, sparkPaint);
+                }
                 
-                // 스파크 끝에 작은 원점
-                canvas.drawCircle(x, y, size * 0.5f, paint);
+                // 스파크 끝에 밝은 원점
+                Paint dotPaint = new Paint();
+                dotPaint.setColor(Color.WHITE);
+                dotPaint.setAlpha(paint.getAlpha());
+                canvas.drawCircle(x, y, size, dotPaint);
             }
             
             canvas.restore();

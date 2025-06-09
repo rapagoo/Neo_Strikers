@@ -34,8 +34,8 @@ public class MainScene extends Scene {
         initLayers(Layer.COUNT); // 레이어 초기화
 
         // 배경 레이어 추가
-        add(Layer.bg1, new VertScrollBackground(R.mipmap.bg_city, 20));
-        add(Layer.bg2, new VertScrollBackground(R.mipmap.clouds, 40));
+        add(Layer.bg1, new VertScrollBackground(R.mipmap.bg_space, 20));
+        //add(Layer.bg2, new VertScrollBackground(R.mipmap.clouds, 40));
 
         // 플레이어 생성 및 fighter 레이어에 추가
         this.fighter = new Fighter(); // Fighter 객체 생성
