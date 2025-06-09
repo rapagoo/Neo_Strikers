@@ -119,6 +119,7 @@ public class MainScene extends Scene {
 
         clearLayer(Layer.enemy);
         clearLayer(Layer.bullet);
+        clearLayer(Layer.enemy_bullet);
         clearLayer(Layer.item);
         clearLayer(Layer.effect);
 
