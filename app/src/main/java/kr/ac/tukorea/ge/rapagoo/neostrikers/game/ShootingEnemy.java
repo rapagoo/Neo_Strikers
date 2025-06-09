@@ -56,10 +56,10 @@ public class ShootingEnemy extends Enemy {
     private static final int BODY_SPRITE_ID = R.mipmap.enemy_fighter_body;
     private static final int ENGINE_SPRITE_ID = R.mipmap.enemy_fighter_engine;
 
-    private static final float ENGINE_FPS = 12.0f;
-    private static final int ENGINE_FRAME_COUNT = 12; // 엔진 스프라이트 시트의 실제 프레임 수
+    private static final float ENGINE_FPS = 10.0f;
+    private static final int ENGINE_FRAME_COUNT = 10; // 엔진 스프라이트 시트의 실제 프레임 수
 
-    private static final float ENGINE_OFFSET_Y = -20f; // 본체 중심 Y에서 엔진 중심 Y까지의 윗방향 거리
+    private static final float ENGINE_OFFSET_Y = 70f; // 본체 중심 Y에서 엔진 중심 Y까지의 윗방향 거리
 
     private static final float SHOOTER_TARGET_WIDTH = 180f;
 
