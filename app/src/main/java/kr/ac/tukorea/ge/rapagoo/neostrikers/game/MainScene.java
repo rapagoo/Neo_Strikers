@@ -120,7 +120,7 @@ public class MainScene extends Scene {
         clearLayer(Layer.enemy);
         clearLayer(Layer.bullet);
         clearLayer(Layer.item);
-        // clearLayer(Layer.effect);
+        clearLayer(Layer.effect);
 
 
         ArrayList<IGameObject> controllers = objectsAt(Layer.controller);

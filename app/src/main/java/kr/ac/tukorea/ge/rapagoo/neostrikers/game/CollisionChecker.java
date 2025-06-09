@@ -54,6 +54,10 @@ public class CollisionChecker implements IGameObject {
                     scene.remove(playerBullet);
                     boolean dead = enemy.decreaseLife(playerBullet.getPower());
                     if (dead) {
+                        // 폭발 효과 생성
+                        Explosion explosion = Explosion.get(enemy.getX(), enemy.getY());
+                        scene.add(MainScene.Layer.effect, explosion);
+                        
                         scene.remove(MainScene.Layer.enemy, enemy);
                         scene.addScore(enemy.getScore());
                         if (random.nextFloat() < POWERUP_DROP_RATE) {
@@ -98,6 +102,11 @@ public class CollisionChecker implements IGameObject {
             Enemy enemy = (Enemy) enemies.get(e);
             if (CollisionHelper.collides(fighter, enemy)) {
                 Log.d(TAG, "Player collided with an enemy!");
+                
+                // 폭발 효과 생성
+                Explosion explosion = Explosion.get(enemy.getX(), enemy.getY());
+                scene.add(MainScene.Layer.effect, explosion);
+                
                 fighter.decreaseHealth(1); // 적과 직접 충돌 시 데미지 1
                 scene.remove(MainScene.Layer.enemy, enemy); // 충돌한 적은 제거
                 if (fighter.isDead()) break; // 플레이어가 죽으면 더 이상 검사 안 함
