@@ -30,7 +30,7 @@ public class EnemyBullet extends AnimSprite implements IRecyclable, IBoxCollidab
         // mipmapId: 애니메이션 스프라이트 시트의 리소스 ID
         // fps: 초당 프레임 수 (애니메이션 속도)
         // frameCount: 스프라이트 시트 내의 총 프레임 수 (0이면 이미지 높이를 기준으로 자동 계산)
-        super(R.mipmap.enemybullet_1, 4.0f, 4); // 예시: enemy_bullet_anim 이미지, 10fps, 4프레임
+        super(R.mipmap.enemybullet_1, 8.0f, 4); // 예시: enemy_bullet_anim 이미지, 10fps, 4프레임
         // Log.d(TAG, "EnemyBullet constructor called");
     }
 
