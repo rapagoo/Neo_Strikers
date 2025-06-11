@@ -309,7 +309,7 @@ public class ShootingEnemy extends Enemy {
                 
             case PLAYER_AIM:
                 // 플레이어 방향으로 발사
-                Fighter player = findPlayer(mainScene);
+                Fighter player = mainScene.getFighter();
                 if (player != null) {
                     float dx = player.getX() - firePosX;
                     float dy = player.getY() - firePosY;
@@ -326,9 +326,8 @@ public class ShootingEnemy extends Enemy {
     }
     
     private Fighter findPlayer(MainScene scene) {
-        // 간단한 플레이어 찾기 - 실제 구현은 MainScene에서 플레이어 참조를 제공하는 것이 좋음
-        // 여기서는 임시로 null 반환 (플레이어 추적 기능은 나중에 완성)
-        return null; // TODO: MainScene에서 플레이어 참조 제공 필요
+        // MainScene에서 플레이어 참조를 직접 가져오도록 수정
+        return scene.getFighter();
     }
 
     @Override
