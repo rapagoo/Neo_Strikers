@@ -261,11 +261,23 @@ public class ShootingEnemy extends Enemy {
 
     @Override
     public void draw(Canvas canvas) {
+        // 부모의 draw()를 호출하지 않고 자체적으로 그림
+        // super.draw(canvas)를 호출하면 부모가 가진 이미지(지금은 null)를 그리려 하므로 주석 처리
         if (bodySprite != null) {
             bodySprite.draw(canvas);
         }
         if (engineSprite != null) {
             engineSprite.draw(canvas);
+        }
+
+        // 체력 게이지를 충돌 영역에 맞춰 그리기
+        RectF collisionRect = getCollisionRect();
+        float gauge_width = collisionRect.width();
+        float gauge_x = collisionRect.left;
+        float gauge_y = collisionRect.bottom + 5; // 충돌 영역 바로 아래에 약간의 간격을 두고 표시
+
+        if (maxLife > 0) {
+            gauge.draw(canvas, gauge_x, gauge_y, gauge_width, (float)life / maxLife);
         }
     }
 

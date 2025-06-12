@@ -18,6 +18,7 @@ public class Bullet implements IGameObject, IRecyclable, IBoxCollidable, ILayerP
     protected RectF dstRect = new RectF();
     private int power;
     private int powerLevel;
+    private float rotation; // 총알 회전 각도
 
     private Paint corePaint;
     private Paint glowPaint;
@@ -51,6 +52,11 @@ public class Bullet implements IGameObject, IRecyclable, IBoxCollidable, ILayerP
         this.power = power;
         this.powerLevel = powerLevel;
         this.life = 0; // for trail effect
+
+        // 총알의 이동 방향 벡터를 기반으로 회전 각도 계산
+        // atan2 결과는 라디안이므로 도로 변환. y가 위로 가는 좌표계이므로 atan2(dy, dx) 사용.
+        // 수직으로 그려진 모양을 기준으로 하므로 -90도 보정.
+        this.rotation = (float) Math.toDegrees(Math.atan2(dy, dx)) - 90f;
 
         // 파워 레벨에 따라 총알의 크기와 스타일 결정
         switch (powerLevel) {
@@ -115,25 +121,41 @@ public class Bullet implements IGameObject, IRecyclable, IBoxCollidable, ILayerP
                 break;
         }
 
-        // 궤적 효과 (Trail)
+        // 궤적 효과 (Trail) - 회전시키지 않음
         trailPaint.setColor(glowColor);
         trailPaint.setStrokeWidth(width);
         trailPaint.setAlpha(80);
         trailPaint.setStrokeCap(Paint.Cap.ROUND);
-        canvas.drawLine(x, y, x, y - trailLength, trailPaint);
+        
+        // 이전의 복잡한 각도 계산 대신, 속도 벡터를 직접 사용하여 그림자 방향을 계산합니다.
+        float speed = (float) Math.sqrt(dx * dx + dy * dy);
+        if (speed > 0) {
+            float trailEndX = x - (dx / speed) * trailLength;
+            float trailEndY = y - (dy / speed) * trailLength;
+            canvas.drawLine(x, y, trailEndX, trailEndY, trailPaint);
+        }
+
+        // 캔버스 저장 및 회전 적용
+        canvas.save();
+        canvas.translate(x, y);
+        canvas.rotate(rotation);
 
         // 글로우 효과 (Glow)
         glowPaint.setColor(glowColor);
         glowPaint.setAlpha(150);
         canvas.drawOval(
-                x - width * 0.7f, y - height * 0.4f,
-                x + width * 0.7f, y + height * 0.6f,
+                -width * 0.7f, -height * 0.4f,
+                width * 0.7f, height * 0.6f,
                 glowPaint
         );
 
         // 중심 코어 (Core)
         corePaint.setColor(coreColor);
-        canvas.drawOval(dstRect, corePaint);
+        canvas.drawOval(
+                -width / 2, -height / 2,
+                width / 2, height / 2,
+                corePaint
+        );
 
         // 맥동 효과 (Pulse for level 3)
         if (powerLevel >= 3) {
@@ -141,11 +163,14 @@ public class Bullet implements IGameObject, IRecyclable, IBoxCollidable, ILayerP
             int pulseAlpha = (int) (100 * pulseRatio);
             glowPaint.setAlpha(pulseAlpha);
             canvas.drawOval(
-                    x - width * (0.8f + pulseRatio * 0.4f), y - height * (0.4f + pulseRatio * 0.2f),
-                    x + width * (0.8f + pulseRatio * 0.4f), y + height * (0.6f + pulseRatio * 0.2f),
+                    -(width * (0.8f + pulseRatio * 0.4f)), -(height * (0.4f + pulseRatio * 0.2f)),
+                    (width * (0.8f + pulseRatio * 0.4f)), (height * (0.6f + pulseRatio * 0.2f)),
                     glowPaint
             );
         }
+
+        // 캔버스 복원
+        canvas.restore();
     }
 
     public int getPower() {

@@ -141,14 +141,14 @@ public class Fighter extends Sprite implements IBoxCollidable {
                 scene.add(MainScene.Layer.bullet, bullet1);
                 break;
             case 2:
-                float gapLevel2 = 30f;
+                float gapLevel2 = 60f;
                 Bullet bullet2_left = Bullet.get(x - gapLevel2 / 2, y - BULLET_OFFSET, 0, BULLET_SPEED_Y, basePower + 5, powerLevel);
                 scene.add(MainScene.Layer.bullet, bullet2_left);
                 Bullet bullet2_right = Bullet.get(x + gapLevel2 / 2, y - BULLET_OFFSET, 0, BULLET_SPEED_Y, basePower + 5, powerLevel);
                 scene.add(MainScene.Layer.bullet, bullet2_right);
                 break;
             case 3:
-                float gapLevel3Center = 20f;
+                float gapLevel3Center = 50f;
                 float diagOffset = 40f;
                 Bullet bullet3_center_left = Bullet.get(x - gapLevel3Center / 2, y - BULLET_OFFSET, 0, BULLET_SPEED_Y, basePower + 10, powerLevel);
                 scene.add(MainScene.Layer.bullet, bullet3_center_left);

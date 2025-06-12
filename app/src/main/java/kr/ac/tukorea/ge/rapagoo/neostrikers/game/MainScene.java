@@ -30,7 +30,7 @@ public class MainScene extends Scene {
     }
 
     public MainScene() {
-        // Metrics.setGameSize(900, 1600); // 기본값 사용 시 주석 처리 또는 삭제
+        Metrics.setGameSize(900, 2000); // 20:9 비율로 설정
         initLayers(Layer.COUNT); // 레이어 초기화
 
         // 배경 레이어 추가
