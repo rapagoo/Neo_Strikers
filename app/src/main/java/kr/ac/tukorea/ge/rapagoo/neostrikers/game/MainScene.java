@@ -19,8 +19,11 @@ public class MainScene extends Scene {
     private static final String TAG = MainScene.class.getSimpleName();
     private Fighter fighter; // fighter를 멤버 변수로 선언 (생성자에서 초기화)
     private final Score score;
+    private HealthUI healthUI;
+    private Boss boss;
 
     private boolean isGameOver = false; // 게임 오버 상태 플래그
+    private boolean isGameWon = false;  // 게임 승리 상태 플래그
     private boolean gameOverDialogShown = false; // 게임 오버 다이얼로그가 이미 표시되었는지 확인하는 플래그
 
     // 게임 레이어 정의
@@ -46,9 +49,15 @@ public class MainScene extends Scene {
         score.setScore(0);
         add(Layer.ui, score);
 
+        this.healthUI = new HealthUI(this.fighter);
+        add(Layer.ui, healthUI);
+
         // 컨트롤러 레이어에 EnemyGenerator와 CollisionChecker 추가
-        add(Layer.controller, new EnemyGenerator(this));
+        add(Layer.controller, new EnemyGenerator(this)); // 보스 테스트를 위해 임시 주석 처리
         add(Layer.controller, new CollisionChecker(this));
+
+        // 보스 테스트를 위해 즉시 보스전 시작
+        //startBossBattle();
     }
 
     // 점수 추가 메소드
@@ -67,13 +76,25 @@ public class MainScene extends Scene {
         return fighter;
     }
 
+    public void startBossBattle() {
+        clearLayer(Layer.enemy);
+        clearLayer(Layer.enemy_bullet);
+        clearLayer(Layer.item);
+
+        this.boss = new Boss();
+        add(Layer.enemy, this.boss);
+    }
 
     @Override
     public void update() {
-        if (isGameOver) {
+        if (isGameOver || isGameWon) {
             if (!gameOverDialogShown) {
                 if (GameView.view.getContext() instanceof DragonFlightActivity) {
-                    ((DragonFlightActivity) GameView.view.getContext()).showGameOverDialog(score.getScore());
+                    if (isGameWon) {
+                        ((DragonFlightActivity) GameView.view.getContext()).showGameWinDialog(score.getScore());
+                    } else {
+                        ((DragonFlightActivity) GameView.view.getContext()).showGameOverDialog(score.getScore());
+                    }
                     gameOverDialogShown = true;
                 }
             }
@@ -85,6 +106,13 @@ public class MainScene extends Scene {
         if (fighter != null && fighter.isDead()) {
             isGameOver = true;
             Log.i(TAG, "Game Over! Final Score: " + score.getScore());
+        }
+
+        if (boss != null && boss.isDead()) {
+            isGameWon = true;
+            Log.i(TAG, "You WIN! Final Score: " + score.getScore());
+            // 보스가 죽었으므로 boss 참조를 null로 설정
+            this.boss = null;
         }
     }
 
@@ -108,6 +136,7 @@ public class MainScene extends Scene {
     public void restartGame() {
         Log.d(TAG, "Restarting game from MainScene...");
         isGameOver = false;
+        isGameWon = false;
         gameOverDialogShown = false;
         score.setScore(0);
 
@@ -126,12 +155,11 @@ public class MainScene extends Scene {
 
         ArrayList<IGameObject> controllers = objectsAt(Layer.controller);
         for (int i = controllers.size() - 1; i >= 0; i--) {
-            if (controllers.get(i) instanceof EnemyGenerator) {
-                remove(Layer.controller, controllers.get(i));
-                break;
+            IGameObject controller = controllers.get(i);
+            if (controller instanceof EnemyGenerator) {
+                ((EnemyGenerator) controller).reset();
             }
         }
-        add(Layer.controller, new EnemyGenerator(this));
 
         Log.d(TAG, "Game has been reset.");
     }

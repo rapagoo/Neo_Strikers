@@ -16,6 +16,7 @@ public class EnemyGenerator implements IGameObject {
     private final MainScene scene;
     private float enemyTime = 0; // 다음 웨이브까지 남은 시간
     private int wave; // 현재 웨이브 번호
+    private boolean bossSpawned = false;
 
     public EnemyGenerator(MainScene mainScene) {
         this.scene = mainScene;
@@ -24,6 +25,16 @@ public class EnemyGenerator implements IGameObject {
 
     @Override
     public void update() {
+        if (bossSpawned) {
+            return; // 보스가 생성된 후에는 더 이상 일반 적을 생성하지 않음
+        }
+
+        if (scene.getScore() >= 15000) {
+            bossSpawned = true;
+            scene.startBossBattle();
+            return;
+        }
+
         enemyTime -= GameView.frameTime;
         if (enemyTime < 0) {
             generate();
@@ -69,7 +80,8 @@ public class EnemyGenerator implements IGameObject {
             float startX = centerX + offsetX;
             float startY = -100f - (i * 80f); // 시간차 등장
             
-            ShootingEnemy enemy = ShootingEnemy.get(level, i);
+            ShootingEnemy.EnemyType type = selectEnemyType();
+            ShootingEnemy enemy = ShootingEnemy.get(level, i, type);
             enemy.setPosition(startX, startY, enemy.width, enemy.height);
             scene.add(enemy);
             
@@ -87,7 +99,8 @@ public class EnemyGenerator implements IGameObject {
             float startX = 100f + random.nextFloat() * (kr.ac.tukorea.ge.spgp2025.a2dg.framework.view.Metrics.width - 200f);
             float startY = -150f - (random.nextFloat() * 200f); // 랜덤 시간차
             
-            ShootingEnemy enemy = ShootingEnemy.get(level, i);
+            ShootingEnemy.EnemyType type = selectEnemyType();
+            ShootingEnemy enemy = ShootingEnemy.get(level, i, type);
             enemy.setPosition(startX, startY, enemy.width, enemy.height);
             scene.add(enemy);
             
@@ -106,7 +119,8 @@ public class EnemyGenerator implements IGameObject {
             float startX = fromLeft ? 50f : kr.ac.tukorea.ge.spgp2025.a2dg.framework.view.Metrics.width - 50f;
             float startY = -100f - (i * 120f);
             
-            ShootingEnemy enemy = ShootingEnemy.get(level, i);
+            ShootingEnemy.EnemyType type = selectEnemyType();
+            ShootingEnemy enemy = ShootingEnemy.get(level, i, type);
             enemy.setPosition(startX, startY, enemy.width, enemy.height);
             scene.add(enemy);
             
@@ -121,8 +135,22 @@ public class EnemyGenerator implements IGameObject {
             if (level < 0) level = 0;
             if (Enemy.MAX_LEVEL > 0 && level > Enemy.MAX_LEVEL) level = Enemy.MAX_LEVEL;
 
-            ShootingEnemy shootingEnemy = ShootingEnemy.get(level, i);
+            ShootingEnemy.EnemyType type = selectEnemyType();
+            ShootingEnemy shootingEnemy = ShootingEnemy.get(level, i, type);
             scene.add(shootingEnemy);
+        }
+    }
+
+    private ShootingEnemy.EnemyType selectEnemyType() {
+        if (wave < 5) {
+            return ShootingEnemy.EnemyType.TYPE_1;
+        } else if (wave < 10) {
+            return random.nextFloat() < 0.7f ? ShootingEnemy.EnemyType.TYPE_1 : ShootingEnemy.EnemyType.TYPE_2;
+        } else {
+            float roll = random.nextFloat();
+            if (roll < 0.5f) return ShootingEnemy.EnemyType.TYPE_1;
+            if (roll < 0.85f) return ShootingEnemy.EnemyType.TYPE_2;
+            return ShootingEnemy.EnemyType.TYPE_3;
         }
     }
 
@@ -136,6 +164,7 @@ public class EnemyGenerator implements IGameObject {
     public void reset() {
         this.wave = 0;
         this.enemyTime = GEN_INTERVAL / 2; // 첫 웨이브까지 시간 초기화
+        this.bossSpawned = false;
         Log.d(TAG, "EnemyGenerator has been reset.");
     }
 }

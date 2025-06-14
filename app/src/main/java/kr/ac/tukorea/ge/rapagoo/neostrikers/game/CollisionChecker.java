@@ -45,27 +45,42 @@ public class CollisionChecker implements IGameObject {
 
         for (int e = enemies.size() - 1; e >= 0; e--) {
             if (e >= enemies.size()) continue; // 방어 코드
-            Enemy enemy = (Enemy) enemies.get(e);
+            IGameObject enemyObject = enemies.get(e);
+
             for (int pb = playerBullets.size() - 1; pb >= 0; pb--) {
                 if (pb >= playerBullets.size()) continue; // 방어 코드
                 Bullet playerBullet = (Bullet) playerBullets.get(pb);
 
-                if (CollisionHelper.collides(enemy, playerBullet)) {
-                    scene.remove(playerBullet);
-                    boolean dead = enemy.decreaseLife(playerBullet.getPower());
-                    if (dead) {
-                        // 폭발 효과 생성
-                        Explosion explosion = Explosion.get(enemy.getX(), enemy.getY());
-                        scene.add(MainScene.Layer.effect, explosion);
-                        
-                        scene.remove(MainScene.Layer.enemy, enemy);
-                        scene.addScore(enemy.getScore());
-                        if (random.nextFloat() < POWERUP_DROP_RATE) {
-                            PowerUpItem item = PowerUpItem.get(enemy.getX(), enemy.getY());
-                            scene.add(MainScene.Layer.item, item);
+                if (enemyObject instanceof Boss) {
+                    Boss boss = (Boss) enemyObject;
+                    if (CollisionHelper.collides(boss, playerBullet)) {
+                        scene.remove(playerBullet);
+                        boolean dead = boss.decreaseLife(playerBullet.getPower());
+                        if (dead) {
+                            Explosion explosion = Explosion.get(boss.getX(), boss.getY());
+                            scene.add(MainScene.Layer.effect, explosion);
+                            scene.remove(MainScene.Layer.enemy, boss);
+                            scene.addScore(boss.getScore());
                         }
+                        break; // 다음 적으로
                     }
-                    break;
+                } else if (enemyObject instanceof Enemy) {
+                    Enemy enemy = (Enemy) enemyObject;
+                    if (CollisionHelper.collides(enemy, playerBullet)) {
+                        scene.remove(playerBullet);
+                        boolean dead = enemy.decreaseLife(playerBullet.getPower());
+                        if (dead) {
+                            Explosion explosion = Explosion.get(enemy.getX(), enemy.getY());
+                            scene.add(MainScene.Layer.effect, explosion);
+                            scene.remove(MainScene.Layer.enemy, enemy);
+                            scene.addScore(enemy.getScore());
+                            if (random.nextFloat() < POWERUP_DROP_RATE) {
+                                PowerUpItem item = PowerUpItem.get(enemy.getX(), enemy.getY());
+                                scene.add(MainScene.Layer.item, item);
+                            }
+                        }
+                        break; // 다음 적으로
+                    }
                 }
             }
         }
@@ -99,22 +114,30 @@ public class CollisionChecker implements IGameObject {
 
         for (int e = enemies.size() - 1; e >= 0; e--) {
             if (e >= enemies.size()) continue; // 방어 코드
-            Enemy enemy = (Enemy) enemies.get(e);
-            if (CollisionHelper.collides(fighter, enemy)) {
-                Log.d(TAG, "Player collided with an enemy!");
-                
-                // 폭발 효과 생성
-                Explosion explosion = Explosion.get(enemy.getX(), enemy.getY());
-                scene.add(MainScene.Layer.effect, explosion);
-                
-                fighter.decreaseHealth(1); // 적과 직접 충돌 시 데미지 1
-                scene.remove(MainScene.Layer.enemy, enemy); // 충돌한 적은 제거
-                if (fighter.isDead()) break; // 플레이어가 죽으면 더 이상 검사 안 함
+            IGameObject enemyObject = enemies.get(e);
+
+            if (enemyObject instanceof Boss) {
+                Boss boss = (Boss) enemyObject;
+                if (CollisionHelper.collides(fighter, boss)) {
+                    Log.d(TAG, "Player collided with the BOSS!");
+                    fighter.decreaseHealth(3); // 보스와 직접 충돌 시 데미지 3
+                    if (fighter.isDead()) break;
+                }
+            } else if (enemyObject instanceof Enemy) {
+                Enemy enemy = (Enemy) enemyObject;
+                if (CollisionHelper.collides(fighter, enemy)) {
+                    Log.d(TAG, "Player collided with an enemy!");
+                    Explosion explosion = Explosion.get(enemy.getX(), enemy.getY());
+                    scene.add(MainScene.Layer.effect, explosion);
+                    fighter.decreaseHealth(1);
+                    scene.remove(MainScene.Layer.enemy, enemy);
+                    if (fighter.isDead()) break;
+                }
             }
         }
     }
 
-    // 플레이어 - 적 총알 충돌 검사 메소드 << 새로 추가된 메소드
+    // 플레이어 - 적 총알 충돌 검사 메소드
     private void checkPlayerEnemyBulletCollisions() {
         ArrayList<IGameObject> enemyBullets = scene.objectsAt(MainScene.Layer.enemy_bullet);
         if (enemyBullets == null || enemyBullets.isEmpty()) return;
@@ -127,17 +150,23 @@ public class CollisionChecker implements IGameObject {
 
         for (int eb = enemyBullets.size() - 1; eb >= 0; eb--) {
             if (eb >= enemyBullets.size()) continue; // 방어 코드
-            EnemyBullet enemyBullet = (EnemyBullet) enemyBullets.get(eb);
+            IGameObject bulletObject = enemyBullets.get(eb);
 
-            if (CollisionHelper.collides(fighter, enemyBullet)) {
-                Log.d(TAG, "Player hit by an enemy bullet!");
-                fighter.decreaseHealth(enemyBullet.getPower()); // 적 총알의 공격력만큼 체력 감소
-                scene.remove(enemyBullet); // 충돌한 적 총알 제거
-
-                // 플레이어가 이 충돌로 죽었다면, 더 이상 검사할 필요 없음
-                if (fighter.isDead()) {
-                    Log.d(TAG, "Player died from enemy bullet.");
-                    break;
+            if (bulletObject instanceof EnemyBullet) {
+                EnemyBullet enemyBullet = (EnemyBullet) bulletObject;
+                if (CollisionHelper.collides(fighter, enemyBullet)) {
+                    Log.d(TAG, "Player hit by an enemy bullet!");
+                    fighter.decreaseHealth(enemyBullet.getPower());
+                    scene.remove(enemyBullet);
+                    if (fighter.isDead()) break;
+                }
+            } else if (bulletObject instanceof BossBullet) {
+                BossBullet bossBullet = (BossBullet) bulletObject;
+                if (CollisionHelper.collides(fighter, bossBullet)) {
+                    Log.d(TAG, "Player hit by a BOSS bullet!");
+                    fighter.decreaseHealth(bossBullet.getPower());
+                    scene.remove(MainScene.Layer.enemy_bullet, bossBullet);
+                    if (fighter.isDead()) break;
                 }
             }
         }

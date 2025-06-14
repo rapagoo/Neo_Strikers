@@ -58,7 +58,7 @@ public class Fighter extends Sprite implements IBoxCollidable {
     private final RectF collisionRect = new RectF();
 
     // 체력 관련 변수
-    private static final int INITIAL_HEALTH = 3; // 초기 체력
+    private static final int INITIAL_HEALTH = 5; // 초기 체력
     private int health; // 현재 체력
     private boolean isInvincible = false; // 무적 상태 여부
     private float invincibleTime = 0f; // 무적 지속 시간

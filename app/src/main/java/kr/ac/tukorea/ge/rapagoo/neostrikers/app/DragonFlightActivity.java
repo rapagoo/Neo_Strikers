@@ -67,6 +67,41 @@ public class DragonFlightActivity extends GameActivity {
         });
     }
 
+    // 게임 승리 다이얼로그 표시 메소드
+    public void showGameWinDialog(final int score) {
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                AlertDialog.Builder builder = new AlertDialog.Builder(DragonFlightActivity.this);
+                builder.setTitle("YOU WIN!");
+                builder.setMessage("최종 점수: " + score);
+                builder.setCancelable(false);
+
+                builder.setPositiveButton("다시 시작", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        Scene currentScene = Scene.top();
+                        if (currentScene instanceof MainScene) {
+                            ((MainScene) currentScene).restartGame();
+                        } else {
+                            GameView.view.popAllScenes();
+                            new MainScene().push();
+                        }
+                    }
+                });
+
+                builder.setNegativeButton("메인으로", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        finish();
+                    }
+                });
+                AlertDialog dialog = builder.create();
+                dialog.show();
+            }
+        });
+    }
+
     // GameActivity의 onBackPressed 콜백이 GameView의 onBackPressed를 호출하고,
     // GameView는 Scene 스택의 최상단 Scene의 onBackPressed를 호출합니다.
     // MainScene에서 onBackPressed를 특별히 처리하지 않으면 기본 동작(씬 pop 또는 액티비티 종료)이 수행됩니다.
