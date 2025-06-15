@@ -29,7 +29,7 @@
 
 ### 2.2 Git Commit 현황
 
-![Commit History](https://github.com/user-attachments/assets/0acc8d00-81f0-4b2e-91d6-6f5a075d3eeb)
+![Image](https://github.com/user-attachments/assets/39f892a8-0a1b-48b0-808e-d26a307c7314)
 
 **주차별 Commit 통계:**
 
