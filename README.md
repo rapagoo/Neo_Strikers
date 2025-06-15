@@ -1,5 +1,7 @@
 # Neo-Strikers: 기말 프로젝트 보고서
 
+* 영상 링크: https://youtu.be/VcYjOrw7OyM
+
 ## 1. 게임 소개
 
 * **게임명:** Neo-Strikers (가칭)
