@@ -10,6 +10,7 @@ import kr.ac.tukorea.ge.spgp2025.a2dg.framework.interfaces.IGameObject;
 import kr.ac.tukorea.ge.spgp2025.a2dg.framework.objects.Score;
 import kr.ac.tukorea.ge.spgp2025.a2dg.framework.objects.Sprite;
 import kr.ac.tukorea.ge.spgp2025.a2dg.framework.objects.VertScrollBackground;
+import kr.ac.tukorea.ge.spgp2025.a2dg.framework.res.Sound;
 import kr.ac.tukorea.ge.spgp2025.a2dg.framework.scene.Scene;
 import kr.ac.tukorea.ge.spgp2025.a2dg.framework.view.GameView; // GameView.view.getContext() 사용
 import kr.ac.tukorea.ge.spgp2025.a2dg.framework.view.Metrics;
@@ -88,6 +89,7 @@ public class MainScene extends Scene {
     }
 
     public void handleEnemyDeath(Enemy enemy) {
+        Sound.play(R.raw.se_enemy_destroy);
         // 1. Determine explosion scale
         float scale = 0.5f;
         if (enemy instanceof ShootingEnemy) {

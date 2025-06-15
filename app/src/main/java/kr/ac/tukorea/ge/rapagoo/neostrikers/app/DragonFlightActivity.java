@@ -7,8 +7,10 @@ import android.util.Log;
 import androidx.appcompat.app.AlertDialog;
 
 import kr.ac.tukorea.ge.rapagoo.neostrikers.BuildConfig;
+import kr.ac.tukorea.ge.rapagoo.neostrikers.R;
 import kr.ac.tukorea.ge.rapagoo.neostrikers.game.MainScene;
 import kr.ac.tukorea.ge.spgp2025.a2dg.framework.activity.GameActivity;
+import kr.ac.tukorea.ge.spgp2025.a2dg.framework.res.Sound;
 import kr.ac.tukorea.ge.spgp2025.a2dg.framework.scene.Scene;
 import kr.ac.tukorea.ge.spgp2025.a2dg.framework.view.GameView;
 
@@ -19,12 +21,38 @@ public class DragonFlightActivity extends GameActivity {
     protected void onCreate(Bundle savedInstanceState) {
         GameView.drawsDebugStuffs = BuildConfig.DEBUG;
         super.onCreate(savedInstanceState);
+        initSounds();
         // GameActivity의 생성자에서 GameView가 생성되고,
         // GameView는 Scene 스택을 관리합니다.
         // 새로운 MainScene을 생성하여 스택에 push합니다.
         if (Scene.top() == null) { // 현재 씬이 없는 경우에만 (최초 실행 또는 이전 씬이 모두 pop 된 경우)
             new MainScene().push();
         }
+    }
+
+    private void initSounds() {
+        Sound.playMusic(this, R.raw.bgm_stage1);
+        Sound.load(this, R.raw.se_player_fire);
+        Sound.load(this, R.raw.se_enemy_destroy);
+        Sound.load(this, R.raw.se_warning);
+    }
+
+    @Override
+    protected void onPause() {
+        Sound.pauseMusic();
+        super.onPause();
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        Sound.resumeMusic();
+    }
+
+    @Override
+    protected void onDestroy() {
+        Sound.stopMusic();
+        super.onDestroy();
     }
 
     // MainScene에서 호출될 게임 오버 다이얼로그 표시 메소드

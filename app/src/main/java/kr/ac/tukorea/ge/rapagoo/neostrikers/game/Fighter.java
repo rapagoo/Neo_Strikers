@@ -11,6 +11,7 @@ import kr.ac.tukorea.ge.rapagoo.neostrikers.R;
 import kr.ac.tukorea.ge.spgp2025.a2dg.framework.interfaces.IBoxCollidable;
 import kr.ac.tukorea.ge.spgp2025.a2dg.framework.objects.Sprite;
 import kr.ac.tukorea.ge.spgp2025.a2dg.framework.res.BitmapPool;
+import kr.ac.tukorea.ge.spgp2025.a2dg.framework.res.Sound;
 import kr.ac.tukorea.ge.spgp2025.a2dg.framework.scene.Scene;
 import kr.ac.tukorea.ge.spgp2025.a2dg.framework.util.RectUtil;
 import kr.ac.tukorea.ge.spgp2025.a2dg.framework.view.GameView;
@@ -142,6 +143,7 @@ public class Fighter extends Sprite implements IBoxCollidable {
             return;
         }
         fireCoolTime = FIRE_INTERVAL;
+        Sound.play(R.raw.se_player_fire, 0.5f);
         MainScene scene = (MainScene) Scene.top();
         if (scene == null) return;
 
