@@ -32,46 +32,59 @@ public class Explosion implements IGameObject, IRecyclable, ILayerProvider<MainS
     private ScreenFlash flash; // 화면 플래시 효과
     private int state;
     private float x, y;
+    private float scale; // 크기 조절 변수
     private Random random;
     
     public Explosion() {
         random = new Random();
     }
     
-    public static Explosion get(float x, float y) {
+    public static Explosion get(float x, float y, float scale, boolean isBombEffect) {
         Explosion explosion = (Explosion) Scene.top().getRecyclable(Explosion.class);
         if (explosion == null) {
             explosion = new Explosion();
         }
-        explosion.init(x, y);
+        explosion.init(x, y, scale, isBombEffect);
         return explosion;
     }
+
+    // 편의를 위한 오버로드
+    public static Explosion get(float x, float y, float scale) {
+        return get(x, y, scale, false);
+    }
     
-    private void init(float x, float y) {
+    private void init(float x, float y, float scale, boolean isBombEffect) {
         this.x = x;
         this.y = y;
+        this.scale = scale;
         this.state = STATE_ALIVE;
         
         // 메인 폭발 파티클들
-        particles = new Particle[DEFAULT_PARTICLE_COUNT];
+        int particleCount = (int)(DEFAULT_PARTICLE_COUNT * scale);
+        particles = new Particle[particleCount];
         for (int i = 0; i < particles.length; i++) {
-            particles[i] = new Particle(x, y, ParticleType.EXPLOSION);
+            particles[i] = new Particle(x, y, ParticleType.EXPLOSION, scale, isBombEffect);
         }
         
         // 스파크 파티클들 (더 빠르고 작은 파티클)
-        sparks = new Particle[SPARK_COUNT];
+        int sparkCount = (int)(SPARK_COUNT * scale);
+        sparks = new Particle[sparkCount];
         for (int i = 0; i < sparks.length; i++) {
-            sparks[i] = new Particle(x, y, ParticleType.SPARK);
+            sparks[i] = new Particle(x, y, ParticleType.SPARK, scale, isBombEffect);
         }
         
         // 충격파 효과
-        shockWave = new ShockWave(x, y);
+        shockWave = new ShockWave(x, y, scale, isBombEffect);
         
         // 폭발 중심 코어
-        core = new ExplosionCore(x, y);
+        core = new ExplosionCore(x, y, scale, isBombEffect);
         
-        // 화면 플래시 효과
-        flash = new ScreenFlash();
+        // 화면 플래시 효과 (폭탄일 경우에만 활성화)
+        if (isBombEffect) {
+            flash = new ScreenFlash();
+        } else {
+            flash = null;
+        }
     }
     
     @Override
@@ -109,7 +122,7 @@ public class Explosion implements IGameObject, IRecyclable, ILayerProvider<MainS
         }
         
         // 화면 플래시 업데이트
-        if (flash.isAlive()) {
+        if (flash != null && flash.isAlive()) {
             flash.update();
             anyAlive = true;
         }
@@ -125,7 +138,7 @@ public class Explosion implements IGameObject, IRecyclable, ILayerProvider<MainS
         if (state == STATE_DEAD) return;
         
         // 화면 플래시를 가장 먼저 그리기 (전체 화면)
-        if (flash.isAlive()) {
+        if (flash != null && flash.isAlive()) {
             flash.draw(canvas);
         }
         
@@ -182,16 +195,20 @@ public class Explosion implements IGameObject, IRecyclable, ILayerProvider<MainS
         private float maxLife;
         private Paint paint;
         
-        public ShockWave(float x, float y) {
+        public ShockWave(float x, float y, float scale, boolean isBombEffect) {
             this.x = x;
             this.y = y;
             this.radius = 0f;
-            this.maxRadius = 100f;
+            this.maxRadius = 100f * scale;
             this.maxLife = this.life = 0.3f; // 짧은 지속시간
             this.paint = new Paint();
             this.paint.setStyle(Paint.Style.STROKE);
-            this.paint.setStrokeWidth(8f);
+            this.paint.setStrokeWidth(8f * scale);
             this.paint.setAntiAlias(true);
+            
+            if (isBombEffect) {
+                // Bomb-specific shockwave color can be set here if needed
+            }
         }
         
         public void update() {
@@ -203,7 +220,7 @@ public class Explosion implements IGameObject, IRecyclable, ILayerProvider<MainS
             // 페이드 아웃
             float alpha = life / maxLife;
             int alphaInt = (int) (255 * alpha * 0.7f); // 반투명
-            paint.setColor(Color.argb(alphaInt, 255, 255, 255)); // 흰색 충격파
+            paint.setColor(Color.argb(alphaInt, 200, 225, 255)); // 밝은 하늘색 충격파
         }
         
         public void draw(Canvas canvas) {
@@ -226,11 +243,11 @@ public class Explosion implements IGameObject, IRecyclable, ILayerProvider<MainS
         private Paint corePaint;
         private Paint glowPaint;
         
-        public ExplosionCore(float x, float y) {
+        public ExplosionCore(float x, float y, float scale, boolean isBombEffect) {
             this.x = x;
             this.y = y;
             this.size = 0f;
-            this.maxSize = 50f;
+            this.maxSize = 50f * scale;
             this.maxLife = this.life = 0.4f; // 짧지만 강렬한 지속시간
             
             this.corePaint = new Paint();
@@ -238,6 +255,16 @@ public class Explosion implements IGameObject, IRecyclable, ILayerProvider<MainS
             
             this.glowPaint = new Paint();
             this.glowPaint.setAntiAlias(true);
+
+            if (isBombEffect) {
+                // Bomb-specific core colors
+                corePaint.setColor(Color.WHITE);
+                glowPaint.setColor(Color.rgb(150, 200, 255)); // Light blue glow
+            } else {
+                // Regular explosion colors
+                corePaint.setColor(Color.WHITE);
+                glowPaint.setColor(Color.rgb(255, 180, 80)); // Orange glow
+            }
         }
         
         public void update() {
@@ -248,27 +275,22 @@ public class Explosion implements IGameObject, IRecyclable, ILayerProvider<MainS
             // 크기는 빠르게 커졌다가 서서히 작아짐
             float lifeRatio = life / maxLife;
             if (lifeRatio > 0.7f) {
-                size = maxSize * (1.0f - lifeRatio) * 3.33f; // 빠른 확장
+                size = maxSize * (1.0f - lifeRatio) / 0.3f; // 0 -> 1
             } else {
-                size = maxSize * lifeRatio * 1.43f; // 서서히 축소
+                size = maxSize * lifeRatio / 0.7f; // 1 -> 0
             }
             
-            // 매우 밝은 흰색 코어
+            // 알파값 조절
             int alpha = (int) (255 * lifeRatio);
-            corePaint.setColor(Color.argb(alpha, 255, 255, 255));
-            
-            // 글로우 효과 (더 큰 범위, 반투명)
-            int glowAlpha = (int) (alpha * 0.3f);
-            glowPaint.setColor(Color.argb(glowAlpha, 255, 200, 0)); // 금색 글로우
+            glowPaint.setAlpha(alpha);
         }
         
         public void draw(Canvas canvas) {
             if (life <= 0) return;
             
-            // 글로우 효과를 먼저 그리기 (더 큰 원)
-            canvas.drawCircle(x, y, size * 2.5f, glowPaint);
-            
-            // 밝은 코어를 위에 그리기
+            // 바깥쪽 글로우 먼저 그리기
+            canvas.drawCircle(x, y, size * 1.5f, glowPaint);
+            // 안쪽 흰색 코어 그리기
             canvas.drawCircle(x, y, size, corePaint);
         }
         
@@ -328,16 +350,16 @@ public class Explosion implements IGameObject, IRecyclable, ILayerProvider<MainS
         private float rotationSpeed;
         private boolean trail; // 궤적 효과
         
-        public Particle(float startX, float startY, ParticleType type) {
+        public Particle(float startX, float startY, ParticleType type, float scale, boolean isBombEffect) {
             this.x = startX;
             this.y = startY;
             this.type = type;
             
             // 타입에 따른 다른 설정
             if (type == ParticleType.EXPLOSION) {
-                setupExplosionParticle();
+                setupExplosionParticle(scale, isBombEffect);
             } else {
-                setupSparkParticle();
+                setupSparkParticle(scale);
             }
             
             this.paint = new Paint();
@@ -349,55 +371,45 @@ public class Explosion implements IGameObject, IRecyclable, ILayerProvider<MainS
             this.trail = random.nextBoolean();
         }
         
-        private void setupExplosionParticle() {
-            // 랜덤한 속도 벡터 생성
-            float angle = random.nextFloat() * 2 * (float) Math.PI;
-            float speed = MIN_SPEED + random.nextFloat() * (MAX_SPEED - MIN_SPEED);
-            this.vx = (float) Math.cos(angle) * speed;
-            this.vy = (float) Math.sin(angle) * speed;
-            
-            // 크기와 수명 설정
-            this.initialSize = this.size = MIN_PARTICLE_SIZE + random.nextFloat() * (MAX_PARTICLE_SIZE - MIN_PARTICLE_SIZE);
-            this.maxLife = this.life = DEFAULT_LIFETIME * (0.8f + random.nextFloat() * 0.4f); // 수명 변화
-            
-            // 강렬하고 선명한 폭발 색상
-            int[] colors = {
-                Color.rgb(255, 255, 0),   // 밝은 노란색
-                Color.rgb(255, 140, 0),   // 강렬한 주황색
-                Color.rgb(255, 69, 0),    // 진한 주황색
-                Color.rgb(255, 20, 20),   // 밝은 빨간색
-                Color.rgb(255, 215, 0),   // 금색
-                Color.rgb(255, 255, 100), // 연한 노란색
-                Color.rgb(255, 100, 0),   // 불꽃색
-                Color.rgb(255, 255, 255), // 흰색 (매우 뜨거운 느낌)
-                Color.rgb(255, 200, 0),   // 황금색
-                Color.rgb(255, 50, 50)    // 밝은 적색
-            };
-            this.baseColor = colors[random.nextInt(colors.length)];
+        private void setupExplosionParticle(float scale, boolean isBombEffect) {
+            float angle = (float) (random.nextDouble() * 2 * Math.PI);
+            float speed = MIN_SPEED + (float)random.nextDouble() * (MAX_SPEED - MIN_SPEED);
+            speed *= scale;
+
+            this.vx = (float) (Math.cos(angle) * speed);
+            this.vy = (float) (Math.sin(angle) * speed);
+            this.initialSize = this.size = (MIN_PARTICLE_SIZE + random.nextInt(MAX_PARTICLE_SIZE - MIN_PARTICLE_SIZE)) * scale;
+            this.maxLife = this.life = (0.5f + random.nextFloat() * 0.5f) * (float)Math.sqrt(scale);
+            this.rotationSpeed = (random.nextFloat() - 0.5f) * 720f;
+            this.trail = true;
+
+            if(isBombEffect) {
+                // Blue/Cyan/White colors for bomb effect
+                int r = 100 + random.nextInt(100);
+                int g = 180 + random.nextInt(76);
+                int b = 200 + random.nextInt(56);
+                this.baseColor = Color.rgb(r, g, b);
+                this.vy -= 150f * scale; // Make particles drift upwards a bit
+            } else {
+                // Orange/Yellow colors for regular explosion
+                int r = 150 + random.nextInt(106);
+                int g = 50 + random.nextInt(100);
+                int b = random.nextInt(50);
+                this.baseColor = Color.rgb(r, g, b);
+            }
         }
         
-        private void setupSparkParticle() {
-            // 스파크는 더 빠르고 직선적
-            float angle = random.nextFloat() * 2 * (float) Math.PI;
-            float speed = MAX_SPEED * 0.8f + random.nextFloat() * MAX_SPEED * 0.6f;
-            this.vx = (float) Math.cos(angle) * speed;
-            this.vy = (float) Math.sin(angle) * speed;
-            
-            // 더 작고 짧은 수명
-            this.initialSize = this.size = 1f + random.nextFloat() * 3f;
-            this.maxLife = this.life = DEFAULT_LIFETIME * 0.5f;
-            
-            // 매우 밝고 강렬한 스파크 색상
-            int[] sparkColors = {
-                Color.rgb(255, 255, 255), // 순백색
-                Color.rgb(255, 255, 200), // 밝은 크림색
-                Color.rgb(255, 255, 100), // 밝은 노란색
-                Color.rgb(255, 255, 0),   // 순 노란색
-                Color.rgb(255, 235, 59),  // 형광 노란색
-                Color.rgb(255, 193, 7),   // 앰버색
-                Color.rgb(255, 255, 150)  // 연한 크림색
-            };
-            this.baseColor = sparkColors[random.nextInt(sparkColors.length)];
+        private void setupSparkParticle(float scale) {
+            float angle = (float) (random.nextDouble() * 2 * Math.PI);
+            float speed = (MAX_SPEED * 0.8f) + (float)random.nextDouble() * (MAX_SPEED * 0.5f);
+            speed *= scale;
+
+            this.vx = (float) (Math.cos(angle) * speed);
+            this.vy = (float) (Math.sin(angle) * speed);
+            this.initialSize = this.size = (MIN_PARTICLE_SIZE / 2f + random.nextInt(MAX_PARTICLE_SIZE / 2)) * scale;
+            this.maxLife = this.life = (0.2f + random.nextFloat() * 0.3f) * (float)Math.sqrt(scale);
+            this.baseColor = Color.WHITE;
+            this.trail = false;
         }
         
         public void update() {

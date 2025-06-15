@@ -259,6 +259,10 @@ public class ShootingEnemy extends Enemy {
         }
     }
 
+    public EnemyType getEnemyType() {
+        return enemyType;
+    }
+
     private void fireBullet() {
         // bodySprite가 null일 경우를 대비한 방어 코드
         if (bodySprite == null) {

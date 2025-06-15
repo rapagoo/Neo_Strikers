@@ -13,9 +13,6 @@ import kr.ac.tukorea.ge.spgp2025.a2dg.framework.util.CollisionHelper;
 public class CollisionChecker implements IGameObject {
     private static final String TAG = CollisionChecker.class.getSimpleName();
     private final MainScene scene;
-    private final Random random = new Random();
-
-    private static final float POWERUP_DROP_RATE = 0.2f;
 
     public CollisionChecker(MainScene mainScene) {
         this.scene = mainScene;
@@ -44,25 +41,34 @@ public class CollisionChecker implements IGameObject {
         if (playerBullets == null || playerBullets.isEmpty()) return;
 
         for (int e = enemies.size() - 1; e >= 0; e--) {
-            if (e >= enemies.size()) continue; // 방어 코드
+            if (e >= enemies.size()) continue;
             IGameObject enemyObject = enemies.get(e);
 
             for (int pb = playerBullets.size() - 1; pb >= 0; pb--) {
-                if (pb >= playerBullets.size()) continue; // 방어 코드
+                if (pb >= playerBullets.size()) continue;
                 Bullet playerBullet = (Bullet) playerBullets.get(pb);
 
                 if (enemyObject instanceof Boss) {
                     Boss boss = (Boss) enemyObject;
                     if (CollisionHelper.collides(boss, playerBullet)) {
                         scene.remove(playerBullet);
-                        boolean dead = boss.decreaseLife(playerBullet.getPower());
+                        boss.decreaseLife(playerBullet.getPower());
+                        break;
+                    }
+                } else if (enemyObject instanceof ShootingEnemy) {
+                    ShootingEnemy enemy = (ShootingEnemy) enemyObject;
+                    if (CollisionHelper.collides(enemy, playerBullet)) {
+                        scene.remove(playerBullet);
+                        boolean dead = enemy.decreaseLife(playerBullet.getPower());
                         if (dead) {
-                            Explosion explosion = Explosion.get(boss.getX(), boss.getY());
-                            scene.add(MainScene.Layer.effect, explosion);
-                            scene.remove(MainScene.Layer.enemy, boss);
-                            scene.addScore(boss.getScore());
+                            float scale = 0.6f;
+                            switch (enemy.getEnemyType()) {
+                                case TYPE_2: scale = 0.9f; break;
+                                case TYPE_3: scale = 1.2f; break;
+                            }
+                            scene.handleEnemyDeath(enemy);
                         }
-                        break; // 다음 적으로
+                        break;
                     }
                 } else if (enemyObject instanceof Enemy) {
                     Enemy enemy = (Enemy) enemyObject;
@@ -70,16 +76,9 @@ public class CollisionChecker implements IGameObject {
                         scene.remove(playerBullet);
                         boolean dead = enemy.decreaseLife(playerBullet.getPower());
                         if (dead) {
-                            Explosion explosion = Explosion.get(enemy.getX(), enemy.getY());
-                            scene.add(MainScene.Layer.effect, explosion);
-                            scene.remove(MainScene.Layer.enemy, enemy);
-                            scene.addScore(enemy.getScore());
-                            if (random.nextFloat() < POWERUP_DROP_RATE) {
-                                PowerUpItem item = PowerUpItem.get(enemy.getX(), enemy.getY());
-                                scene.add(MainScene.Layer.item, item);
-                            }
+                            scene.handleEnemyDeath(enemy);
                         }
-                        break; // 다음 적으로
+                        break;
                     }
                 }
             }
@@ -95,10 +94,19 @@ public class CollisionChecker implements IGameObject {
 
         for (int i = items.size() - 1; i >= 0; i--) {
             if (i >= items.size()) continue; // 방어 코드
-            PowerUpItem item = (PowerUpItem) items.get(i);
-            if (CollisionHelper.collides(fighter, item)) {
-                scene.remove(item);
-                fighter.increasePowerLevel();
+            IGameObject itemObject = items.get(i);
+            if (itemObject instanceof PowerUpItem) {
+                PowerUpItem item = (PowerUpItem) itemObject;
+                if (CollisionHelper.collides(fighter, item)) {
+                    scene.remove(item);
+                    fighter.increasePowerLevel();
+                }
+            } else if (itemObject instanceof BombItem) {
+                BombItem item = (BombItem) itemObject;
+                if (CollisionHelper.collides(fighter, item)) {
+                    scene.remove(item);
+                    fighter.increaseBombCount();
+                }
             }
         }
     }
@@ -113,24 +121,22 @@ public class CollisionChecker implements IGameObject {
         }
 
         for (int e = enemies.size() - 1; e >= 0; e--) {
-            if (e >= enemies.size()) continue; // 방어 코드
+            if (e >= enemies.size()) continue;
             IGameObject enemyObject = enemies.get(e);
 
             if (enemyObject instanceof Boss) {
                 Boss boss = (Boss) enemyObject;
                 if (CollisionHelper.collides(fighter, boss)) {
                     Log.d(TAG, "Player collided with the BOSS!");
-                    fighter.decreaseHealth(3); // 보스와 직접 충돌 시 데미지 3
+                    fighter.decreaseHealth(3);
                     if (fighter.isDead()) break;
                 }
             } else if (enemyObject instanceof Enemy) {
                 Enemy enemy = (Enemy) enemyObject;
                 if (CollisionHelper.collides(fighter, enemy)) {
                     Log.d(TAG, "Player collided with an enemy!");
-                    Explosion explosion = Explosion.get(enemy.getX(), enemy.getY());
-                    scene.add(MainScene.Layer.effect, explosion);
                     fighter.decreaseHealth(1);
-                    scene.remove(MainScene.Layer.enemy, enemy);
+                    scene.handleEnemyDeath(enemy);
                     if (fighter.isDead()) break;
                 }
             }

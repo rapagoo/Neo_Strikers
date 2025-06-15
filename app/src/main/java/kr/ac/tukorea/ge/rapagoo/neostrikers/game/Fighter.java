@@ -64,6 +64,13 @@ public class Fighter extends Sprite implements IBoxCollidable {
     private float invincibleTime = 0f; // 무적 지속 시간
     private static final float INVINCIBLE_DURATION = 1.5f; // 피격 후 무적 시간 (초)
 
+    // 폭탄 관련 변수
+    private int bombCount;
+    private static final int INITIAL_BOMB_COUNT = 1;
+    private static final int MAX_BOMB_COUNT = 5;
+
+    private boolean isControllable = true;
+
     public Fighter() {
         super(R.mipmap.fighters);
         setPosition(Metrics.width / 2, Metrics.height - 150, PLANE_WIDTH, PLANE_HEIGHT);
@@ -72,6 +79,7 @@ public class Fighter extends Sprite implements IBoxCollidable {
         prevX = x;
         health = INITIAL_HEALTH; // 체력 초기화
         powerLevel = 1; // 생성자에서 파워 레벨 초기화
+        bombCount = INITIAL_BOMB_COUNT; // 폭탄 개수 초기화
 
         sparkBitmap = BitmapPool.get(R.mipmap.laser_spark);
         srcRect = new Rect();
@@ -88,17 +96,22 @@ public class Fighter extends Sprite implements IBoxCollidable {
             }
         }
 
-        // 목표 위치(targetX, targetY)로 비행기 위치 업데이트
-        float halfWidth = width / 2;
-        float halfHeight = height / 2;
-        targetX = Math.max(halfWidth, Math.min(targetX, Metrics.width - halfWidth));
-        targetY = Math.max(halfHeight, Math.min(targetY, Metrics.height - halfHeight));
-        setPosition(targetX, targetY, width, height);
+        if (isControllable) {
+            // 목표 위치(targetX, targetY)로 비행기 위치 업데이트
+            float halfWidth = width / 2;
+            float halfHeight = height / 2;
+            targetX = Math.max(halfWidth, Math.min(targetX, Metrics.width - halfWidth));
+            targetY = Math.max(halfHeight, Math.min(targetY, Metrics.height - halfHeight));
+            setPosition(targetX, targetY, width, height);
 
+            fireBullet();
+            updateRoll();
+            prevX = x;
+        }
+
+        // isControllable이 false일 때는 MainScene에서 직접 위치를 제어하며,
+        // 여기서는 충돌 영역만 업데이트합니다.
         updateCollisionRect();
-        fireBullet();
-        updateRoll();
-        prevX = x;
     }
 
     @Override
@@ -193,7 +206,13 @@ public class Fighter extends Sprite implements IBoxCollidable {
         srcRect.set(rollIndex * PLANE_SRC_WIDTH, 0, (rollIndex + 1) * PLANE_SRC_WIDTH, PLANE_SRC_WIDTH);
     }
 
+    public void setControllable(boolean controllable) {
+        this.isControllable = controllable;
+    }
+
     public boolean onTouch(MotionEvent event) {
+        if (!isControllable) return false;
+
         switch (event.getAction()) {
             case MotionEvent.ACTION_DOWN:
             case MotionEvent.ACTION_MOVE:
@@ -226,6 +245,32 @@ public class Fighter extends Sprite implements IBoxCollidable {
                 scene.addScore(500);
             }
         }
+    }
+
+    public void increaseBombCount() {
+        if (bombCount < MAX_BOMB_COUNT) {
+            bombCount++;
+            Log.d(TAG, "Bomb count increased to: " + bombCount);
+        } else {
+            Log.d(TAG, "Bomb count is already at MAX: " + bombCount);
+            MainScene scene = (MainScene) Scene.top();
+            if (scene != null) {
+                scene.addScore(1000); // 폭탄 최대치일 때 추가 점수
+            }
+        }
+    }
+
+    public boolean useBomb() {
+        if (bombCount > 0) {
+            bombCount--;
+            Log.d(TAG, "Bomb used. Remaining: " + bombCount);
+            return true;
+        }
+        return false;
+    }
+
+    public int getBombCount() {
+        return bombCount;
     }
 
     public int getPowerLevel() {
@@ -263,14 +308,17 @@ public class Fighter extends Sprite implements IBoxCollidable {
     }
 
     public void resetHealth() {
-        health = INITIAL_HEALTH;
+        this.health = INITIAL_HEALTH;
         isInvincible = false;
         invincibleTime = 0f;
     }
 
-    // 파워 레벨을 초기화하는 public 메소드 추가
     public void resetPowerLevel() {
         this.powerLevel = 1;
         Log.d(TAG, "Power level has been reset to: " + this.powerLevel);
+    }
+
+    public void resetBombCount() {
+        this.bombCount = INITIAL_BOMB_COUNT;
     }
 }

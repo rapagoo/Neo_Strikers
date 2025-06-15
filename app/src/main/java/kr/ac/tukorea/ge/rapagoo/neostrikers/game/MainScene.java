@@ -8,19 +8,34 @@ import kr.ac.tukorea.ge.rapagoo.neostrikers.R;
 import kr.ac.tukorea.ge.rapagoo.neostrikers.app.DragonFlightActivity; // Activity 참조를 위해 import
 import kr.ac.tukorea.ge.spgp2025.a2dg.framework.interfaces.IGameObject;
 import kr.ac.tukorea.ge.spgp2025.a2dg.framework.objects.Score;
+import kr.ac.tukorea.ge.spgp2025.a2dg.framework.objects.Sprite;
 import kr.ac.tukorea.ge.spgp2025.a2dg.framework.objects.VertScrollBackground;
 import kr.ac.tukorea.ge.spgp2025.a2dg.framework.scene.Scene;
 import kr.ac.tukorea.ge.spgp2025.a2dg.framework.view.GameView; // GameView.view.getContext() 사용
 import kr.ac.tukorea.ge.spgp2025.a2dg.framework.view.Metrics;
 
 import java.util.ArrayList; // ArrayList import 추가
+import java.util.Random;
 
 public class MainScene extends Scene {
     private static final String TAG = MainScene.class.getSimpleName();
+
+    public enum GameState {
+        PLAYING, BOSS_WARNING, BOSS_BATTLE, GAME_CLEAR_SEQUENCE, GAME_OVER
+    }
+    private GameState gameState = GameState.PLAYING;
+
     private Fighter fighter; // fighter를 멤버 변수로 선언 (생성자에서 초기화)
     private final Score score;
     private HealthUI healthUI;
     private Boss boss;
+    private BombButton bombButton;
+    private BombCountUI bombCountUI;
+    private final Random random = new Random();
+    private WarningUI warningUI;
+
+    private static final float POWERUP_DROP_RATE = 0.15f;
+    private static final float BOMB_DROP_RATE = 0.1f;
 
     private boolean isGameOver = false; // 게임 오버 상태 플래그
     private boolean isGameWon = false;  // 게임 승리 상태 플래그
@@ -52,12 +67,65 @@ public class MainScene extends Scene {
         this.healthUI = new HealthUI(this.fighter);
         add(Layer.ui, healthUI);
 
+        this.bombCountUI = new BombCountUI(this.fighter);
+        add(Layer.ui, bombCountUI);
+
+        float bombButtonRadius = 80f;
+        float bombButtonMargin = 40f;
+        this.bombButton = new BombButton(
+                Metrics.width - bombButtonMargin - bombButtonRadius,
+                Metrics.height - bombButtonMargin - 200f - bombButtonRadius,
+                bombButtonRadius
+        );
+        add(Layer.ui, this.bombButton);
+
         // 컨트롤러 레이어에 EnemyGenerator와 CollisionChecker 추가
         add(Layer.controller, new EnemyGenerator(this)); // 보스 테스트를 위해 임시 주석 처리
         add(Layer.controller, new CollisionChecker(this));
 
         // 보스 테스트를 위해 즉시 보스전 시작
         //startBossBattle();
+    }
+
+    public void handleEnemyDeath(Enemy enemy) {
+        // 1. Determine explosion scale
+        float scale = 0.5f;
+        if (enemy instanceof ShootingEnemy) {
+            ShootingEnemy se = (ShootingEnemy) enemy;
+            switch (se.getEnemyType()) {
+                case TYPE_1: scale = 0.6f; break;
+                case TYPE_2: scale = 0.9f; break;
+                case TYPE_3: scale = 1.2f; break;
+            }
+        } else { // It's a basic Enemy
+            scale = 0.4f + enemy.getLevel() * 0.1f;
+        }
+
+        // 2. Create explosion
+        Explosion explosion = Explosion.get(enemy.getX(), enemy.getY(), scale);
+        add(Layer.effect, explosion);
+
+        // 3. Add score
+        addScore(enemy.getScore());
+
+        // 4. Drop item
+        if (random.nextFloat() < POWERUP_DROP_RATE) {
+            PowerUpItem item = PowerUpItem.get(enemy.getX(), enemy.getY());
+            add(Layer.item, item);
+        } else if (random.nextFloat() < BOMB_DROP_RATE) {
+            BombItem bomb = BombItem.get(enemy.getX(), enemy.getY());
+            add(Layer.item, bomb);
+        }
+
+        // 5. Remove enemy
+        remove(Layer.enemy, enemy);
+    }
+
+    public void handleBossDeath(Boss boss) {
+        Explosion explosion = Explosion.get(boss.getX(), boss.getY(), 2.5f);
+        add(Layer.effect, explosion);
+        addScore(boss.getScore());
+        remove(Layer.enemy, boss);
     }
 
     // 점수 추가 메소드
@@ -77,16 +145,42 @@ public class MainScene extends Scene {
     }
 
     public void startBossBattle() {
+        if (gameState != GameState.PLAYING) return;
+
+        this.gameState = GameState.BOSS_WARNING;
+        this.warningUI = new WarningUI();
+        add(Layer.ui, warningUI);
+
+        // 기존 적 생성기를 멈추고 적들을 제거
+        ArrayList<IGameObject> controllers = objectsAt(Layer.controller);
+        for (IGameObject controller : controllers) {
+            if (controller instanceof EnemyGenerator) {
+                ((EnemyGenerator) controller).stop(); // Assuming EnemyGenerator has a stop() method
+            }
+        }
         clearLayer(Layer.enemy);
         clearLayer(Layer.enemy_bullet);
-        clearLayer(Layer.item);
+    }
 
+    private void spawnBoss() {
+        clearLayer(Layer.item);
         this.boss = new Boss();
         add(Layer.enemy, this.boss);
+        this.gameState = GameState.BOSS_BATTLE;
     }
 
     @Override
     public void update() {
+        if (gameState == GameState.BOSS_WARNING) {
+            super.update(); // Update the warning UI
+            if (warningUI != null && warningUI.isFinished()) {
+                remove(Layer.ui, warningUI);
+                warningUI = null;
+                spawnBoss();
+            }
+            return; // Don't update the rest of the game during warning
+        }
+
         if (isGameOver || isGameWon) {
             if (!gameOverDialogShown) {
                 if (GameView.view.getContext() instanceof DragonFlightActivity) {
@@ -103,16 +197,32 @@ public class MainScene extends Scene {
 
         super.update();
 
-        if (fighter != null && fighter.isDead()) {
-            isGameOver = true;
-            Log.i(TAG, "Game Over! Final Score: " + score.getScore());
+        // 폭탄이 없을 때 버튼 비활성화 (시각적 처리)
+        if (bombButton instanceof BombButton) {
+            ((BombButton) bombButton).setDisabled(fighter.getBombCount() <= 0);
         }
 
-        if (boss != null && boss.isDead()) {
-            isGameWon = true;
-            Log.i(TAG, "You WIN! Final Score: " + score.getScore());
-            // 보스가 죽었으므로 boss 참조를 null로 설정
-            this.boss = null;
+        if (gameState == GameState.BOSS_BATTLE && boss != null && boss.isDead()) {
+            handleBossDeath(boss); // 최종 폭발
+            gameState = GameState.GAME_CLEAR_SEQUENCE;
+            fighter.setControllable(false); // 플레이어 조작 비활성화
+        }
+
+        if (gameState == GameState.GAME_CLEAR_SEQUENCE) {
+            fighter.y -= 400 * GameView.frameTime; // 위로 이동
+            if (fighter.y < -fighter.height) {
+                isGameWon = true; // 화면 밖으로 나가면 게임 승리
+                if (!gameOverDialogShown && GameView.view.getContext() instanceof DragonFlightActivity) {
+                    ((DragonFlightActivity) GameView.view.getContext()).showGameWinDialog(score.getScore());
+                    gameOverDialogShown = true;
+                }
+            }
+        }
+
+        if (fighter != null && fighter.isDead() && gameState != GameState.GAME_OVER) {
+            isGameOver = true;
+            gameState = GameState.GAME_OVER;
+            Log.i(TAG, "Game Over! Final Score: " + score.getScore());
         }
     }
 
@@ -124,13 +234,69 @@ public class MainScene extends Scene {
 
     @Override
     public boolean onTouchEvent(MotionEvent event) {
-        if (isGameOver) {
+        if (isGameOver || gameState == GameState.GAME_CLEAR_SEQUENCE) {
             return false;
         }
+
+        float[] pts = Metrics.fromScreen(event.getX(), event.getY());
+        boolean isHandled = false;
+
+        if (bombButton.getBounds().contains(pts[0], pts[1])) {
+            switch (event.getAction()) {
+                case MotionEvent.ACTION_DOWN:
+                    bombButton.setPressed(true);
+                    isHandled = true;
+                    break;
+                case MotionEvent.ACTION_UP:
+                    bombButton.setPressed(false);
+                    useBomb();
+                    isHandled = true;
+                    break;
+            }
+        }
+
+        if (isHandled) return true;
+
+        if (event.getAction() == MotionEvent.ACTION_MOVE) {
+            if (!bombButton.getBounds().contains(pts[0], pts[1])) {
+                bombButton.setPressed(false);
+            }
+        }
+
         if (fighter != null) {
             return fighter.onTouch(event);
         }
         return super.onTouchEvent(event);
+    }
+
+    private void useBomb() {
+        if (fighter.getBombCount() <= 0) {
+            return;
+        }
+        if (fighter.useBomb()) {
+            // 1. 화면 중앙에 크고 번쩍이는 폭발 효과 추가
+            float centerX = Metrics.width / 2;
+            float centerY = Metrics.height / 2;
+            Explosion screenExplosion = Explosion.get(centerX, centerY, 3.0f, true);
+            add(Layer.effect, screenExplosion);
+
+            // 2. 모든 적에게 데미지를 주거나 즉시 사망 처리
+            ArrayList<IGameObject> enemies = objectsAt(Layer.enemy);
+            if (enemies != null) {
+                for (int i = enemies.size() - 1; i >= 0; i--) {
+                    IGameObject enemyObject = enemies.get(i);
+                    if (enemyObject instanceof Boss) {
+                        Boss boss = (Boss) enemyObject;
+                        // 보스에게 데미지만 주고, 죽음 여부는 CollisionChecker에서 처리하므로 여기서 직접 핸들링하지 않음
+                        boss.decreaseLife(500);
+                    } else if (enemyObject instanceof Enemy) {
+                        handleEnemyDeath((Enemy) enemyObject); // 일반 적은 즉시 사망 처리
+                    }
+                }
+            }
+            // 3. 적 총알도 모두 제거
+            clearLayer(Layer.enemy_bullet);
+        }
     }
 
     public void restartGame() {
@@ -138,12 +304,15 @@ public class MainScene extends Scene {
         isGameOver = false;
         isGameWon = false;
         gameOverDialogShown = false;
+        gameState = GameState.PLAYING;
         score.setScore(0);
 
         if (fighter != null) {
+            fighter.setControllable(true);
             fighter.resetHealth();
             fighter.setPosition(Metrics.width / 2, Metrics.height - 150, 120f, 120f);
             fighter.resetPowerLevel(); // fighter.powerLevel = 1; 대신 resetPowerLevel() 호출
+            fighter.resetBombCount();
         }
 
         clearLayer(Layer.enemy);
@@ -164,7 +333,7 @@ public class MainScene extends Scene {
         Log.d(TAG, "Game has been reset.");
     }
 
-    private void clearLayer(Layer layerEnum) {
+    protected void clearLayer(Layer layerEnum) {
         ArrayList<IGameObject> layerObjects = objectsAt(layerEnum);
         if (layerObjects != null) {
             for (int i = layerObjects.size() - 1; i >= 0; i--) {

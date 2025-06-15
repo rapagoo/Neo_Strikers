@@ -10,6 +10,7 @@ import kr.ac.tukorea.ge.spgp2025.a2dg.framework.objects.Sprite;
 import kr.ac.tukorea.ge.spgp2025.a2dg.framework.scene.Scene;
 import kr.ac.tukorea.ge.spgp2025.a2dg.framework.view.GameView;
 import kr.ac.tukorea.ge.spgp2025.a2dg.framework.view.Metrics;
+import java.util.Random;
 
 public class Boss extends Sprite implements IBoxCollidable {
     private int life, maxLife;
@@ -21,11 +22,16 @@ public class Boss extends Sprite implements IBoxCollidable {
     private Paint healthBarBorderPaint;
     private RectF healthBarRect = new RectF();
 
-    private enum State { APPEARING, BATTLE, DYING }
+    private enum State { APPEARING, BATTLE, DEATH_SEQUENCE, DEAD }
     private State state = State.APPEARING;
 
     private float moveSpeed = 100f;
     private float elapsedTime = 0;
+    private float deathSequenceTimer = 0.0f;
+    private static final float DEATH_SEQUENCE_DURATION = 3.0f;
+    private static final float SMALL_EXPLOSION_INTERVAL = 0.15f;
+    private float smallExplosionTimer = 0.0f;
+    private Random random = new Random();
 
     // 공격 패턴 관련
     private enum AttackPattern { SPREAD, SPIRAL, AIMED }
@@ -94,10 +100,22 @@ public class Boss extends Sprite implements IBoxCollidable {
                     fire();
                 }
                 break;
-            case DYING:
-                // 사망 연출 (예: 폭발)
-                // 현재는 바로 사라짐
-                MainScene.top().remove(MainScene.Layer.enemy, this);
+            case DEATH_SEQUENCE:
+                deathSequenceTimer += GameView.frameTime;
+                smallExplosionTimer -= GameView.frameTime;
+                if (smallExplosionTimer < 0) {
+                    float ex = x + (random.nextFloat() - 0.5f) * width;
+                    float ey = y + (random.nextFloat() - 0.5f) * height;
+                    Explosion explosion = Explosion.get(ex, ey, 0.5f);
+                    Scene.top().add(MainScene.Layer.effect, explosion);
+                    smallExplosionTimer = SMALL_EXPLOSION_INTERVAL;
+                }
+                if (deathSequenceTimer > DEATH_SEQUENCE_DURATION) {
+                    state = State.DEAD;
+                }
+                break;
+            case DEAD:
+                // 아무것도 하지 않음. MainScene에서 제거를 처리.
                 break;
         }
         setPosition(x, y, 320f); // 크기 줄임
@@ -201,16 +219,25 @@ public class Boss extends Sprite implements IBoxCollidable {
     }
 
     public boolean decreaseLife(int power) {
+        if (state != State.BATTLE) return false;
+
         life -= power;
         if (life <= 0) {
-            state = State.DYING;
-            return true;
+            life = 0;
+            state = State.DEATH_SEQUENCE;
+            deathSequenceTimer = 0.0f;
+            // 체력바를 비워서 플레이어에게 보스가 죽었음을 알림
+            MainScene scene = (MainScene) Scene.top();
+            if (scene != null) {
+                scene.clearLayer(MainScene.Layer.enemy_bullet); // 보스 총알 제거
+            }
+            return true; // 죽음 시퀀스가 시작되었음을 알림
         }
         return false;
     }
 
     public boolean isDead() {
-        return life <= 0;
+        return state == State.DEAD;
     }
 
     public int getScore() {

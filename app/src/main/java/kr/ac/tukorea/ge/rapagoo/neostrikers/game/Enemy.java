@@ -84,6 +84,10 @@ public class Enemy extends AnimSprite implements IRecyclable, IBoxCollidable, IL
     public void onRecycle() {
     }
 
+    public int getLevel() {
+        return level;
+    }
+
     @Override
     public MainScene.Layer getLayer() {
         return MainScene.Layer.enemy;

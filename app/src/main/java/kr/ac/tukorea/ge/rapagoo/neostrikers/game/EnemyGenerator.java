@@ -16,7 +16,7 @@ public class EnemyGenerator implements IGameObject {
     private final MainScene scene;
     private float enemyTime = 0; // 다음 웨이브까지 남은 시간
     private int wave; // 현재 웨이브 번호
-    private boolean bossSpawned = false;
+    private boolean isStopped = false;
 
     public EnemyGenerator(MainScene mainScene) {
         this.scene = mainScene;
@@ -25,12 +25,12 @@ public class EnemyGenerator implements IGameObject {
 
     @Override
     public void update() {
-        if (bossSpawned) {
-            return; // 보스가 생성된 후에는 더 이상 일반 적을 생성하지 않음
+        if (isStopped) {
+            return;
         }
 
-        if (scene.getScore() >= 15000) {
-            bossSpawned = true;
+        if (scene.getScore() >= 15000 && !isStopped) {
+            isStopped = true; // 보스전 시작을 위해 멈춤
             scene.startBossBattle();
             return;
         }
@@ -160,11 +160,15 @@ public class EnemyGenerator implements IGameObject {
         // 비워둠
     }
 
+    public void stop() {
+        this.isStopped = true;
+    }
+
     // (선택) 게임 재시작 시 EnemyGenerator 상태 초기화를 위한 메소드
     public void reset() {
         this.wave = 0;
         this.enemyTime = GEN_INTERVAL / 2; // 첫 웨이브까지 시간 초기화
-        this.bossSpawned = false;
+        this.isStopped = false;
         Log.d(TAG, "EnemyGenerator has been reset.");
     }
 }
