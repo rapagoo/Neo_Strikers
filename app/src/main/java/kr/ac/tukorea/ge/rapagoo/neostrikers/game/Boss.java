@@ -78,6 +78,7 @@ public class Boss extends Sprite implements IBoxCollidable {
         switch (state) {
             case APPEARING:
                 y += 100f * GameView.frameTime;
+                x = Metrics.width / 2 + (float)Math.sin(elapsedTime * 0.3f) * (Metrics.width * 0.25f);
                 if (y >= Metrics.height * 0.2f) {
                     y = Metrics.height * 0.2f;
                     state = State.BATTLE;

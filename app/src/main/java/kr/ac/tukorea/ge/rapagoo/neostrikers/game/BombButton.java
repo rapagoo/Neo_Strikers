@@ -83,6 +83,10 @@ public class BombButton implements IGameObject {
         isPressed = pressed;
     }
 
+    public boolean isPressed() {
+        return isPressed;
+    }
+
     public void setDisabled(boolean disabled) {
         isDisabled = disabled;
     }

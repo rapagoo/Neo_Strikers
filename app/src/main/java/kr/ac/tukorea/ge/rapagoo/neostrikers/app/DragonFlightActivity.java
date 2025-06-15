@@ -19,7 +19,7 @@ public class DragonFlightActivity extends GameActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-        GameView.drawsDebugStuffs = BuildConfig.DEBUG;
+        GameView.drawsDebugStuffs = false;
         super.onCreate(savedInstanceState);
         initSounds();
         // GameActivity의 생성자에서 GameView가 생성되고,

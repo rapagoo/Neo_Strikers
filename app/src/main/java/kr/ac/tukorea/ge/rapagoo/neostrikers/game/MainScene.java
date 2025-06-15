@@ -49,7 +49,7 @@ public class MainScene extends Scene {
     }
 
     public MainScene() {
-        Metrics.setGameSize(900, 2000); // 20:9 비율로 설정
+        Metrics.setGameSize(900, 1950); // 19.5:9 비율로 설정
         initLayers(Layer.COUNT); // 레이어 초기화
 
         // 배경 레이어 추가
@@ -211,7 +211,7 @@ public class MainScene extends Scene {
         }
 
         if (gameState == GameState.GAME_CLEAR_SEQUENCE) {
-            fighter.y -= 400 * GameView.frameTime; // 위로 이동
+            fighter.setPosition(fighter.x, fighter.y - 400 * GameView.frameTime, fighter.width, fighter.height); // 위로 이동
             if (fighter.y < -fighter.height) {
                 isGameWon = true; // 화면 밖으로 나가면 게임 승리
                 if (!gameOverDialogShown && GameView.view.getContext() instanceof DragonFlightActivity) {
@@ -243,31 +243,41 @@ public class MainScene extends Scene {
         float[] pts = Metrics.fromScreen(event.getX(), event.getY());
         boolean isHandled = false;
 
+        // 폭탄 버튼 터치 처리
         if (bombButton.getBounds().contains(pts[0], pts[1])) {
             switch (event.getAction()) {
                 case MotionEvent.ACTION_DOWN:
                     bombButton.setPressed(true);
                     isHandled = true;
                     break;
+                case MotionEvent.ACTION_MOVE:
+                    isHandled = true; // 버튼 위에서 움직이면 이벤트를 소비하여 기체가 움직이지 않도록 함
+                    break;
                 case MotionEvent.ACTION_UP:
-                    bombButton.setPressed(false);
-                    useBomb();
+                    if (bombButton.isPressed()) {
+                        bombButton.setPressed(false);
+                        useBomb();
+                    }
                     isHandled = true;
                     break;
             }
-        }
-
-        if (isHandled) return true;
-
-        if (event.getAction() == MotionEvent.ACTION_MOVE) {
-            if (!bombButton.getBounds().contains(pts[0], pts[1])) {
+        } else {
+            // 버튼 영역 밖에서 손가락이 움직이거나 떼지면 버튼 눌림 상태 해제
+            if (event.getAction() == MotionEvent.ACTION_MOVE || event.getAction() == MotionEvent.ACTION_UP) {
                 bombButton.setPressed(false);
             }
         }
 
+        // 폭탄 버튼이 이벤트를 처리했다면 여기서 반환
+        if (isHandled) {
+            return true;
+        }
+
+        // 폭탄 버튼이 처리하지 않았다면 파이터에게 이벤트 전달
         if (fighter != null) {
             return fighter.onTouch(event);
         }
+
         return super.onTouchEvent(event);
     }
 
@@ -350,3 +360,4 @@ public class MainScene extends Scene {
         Log.d(TAG, "MainScene onExit called.");
     }
 }
+

@@ -68,7 +68,7 @@ public class Fighter extends Sprite implements IBoxCollidable {
     // 폭탄 관련 변수
     private int bombCount;
     private static final int INITIAL_BOMB_COUNT = 1;
-    private static final int MAX_BOMB_COUNT = 5;
+    private static final int MAX_BOMB_COUNT = 3;
 
     private boolean isControllable = true;
 
@@ -131,7 +131,7 @@ public class Fighter extends Sprite implements IBoxCollidable {
         }
         canvas.drawBitmap(bitmap, srcRect, dstRect, null);
 
-        if (FIRE_INTERVAL - fireCoolTime < SPARK_DURATION) {
+        if (isControllable && FIRE_INTERVAL - fireCoolTime < SPARK_DURATION) {
             RectUtil.setRect(sparkRect, x, y - SPARK_OFFSET, SPARK_WIDTH, SPARK_HEIGHT);
             canvas.drawBitmap(sparkBitmap, null, sparkRect, null);
         }
